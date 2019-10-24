@@ -13,9 +13,9 @@ TagManager:
   - UI
   - 
   - 
-  - 
-  - 
-  - 
+  - Ground
+  - Path
+  - Decor
   - 
   - 
   - 
@@ -40,4 +40,19 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Background Decor
+    uniqueID: 2429823767
+    locked: 0
+  - name: Background Objects
+    uniqueID: 209112073
+    locked: 0
+  - name: Enemy
+    uniqueID: 2988038987
+    locked: 0
+  - name: Foreground Objects
+    uniqueID: 2484758337
+    locked: 0
+  - name: Decor
+    uniqueID: 3434072071
     locked: 0
