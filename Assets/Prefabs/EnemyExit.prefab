@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2178016722525079731}
   - component: {fileID: 2178016722525079730}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: EnemyExit
   m_TagString: Finish
   m_Icon: {fileID: 5132851093641282708, guid: 0000000000000000d000000000000000, type: 0}
