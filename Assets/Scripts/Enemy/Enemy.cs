@@ -26,6 +26,7 @@ public class Enemy : MonoBehaviour
     //Internal Objects & Components (Will be bound automatically at start() );
     private Transform enemy; //enemy object
     private SpriteRenderer sprite;
+    private EnemyManager enemyManager;
     public Transform enemyExit; //Location of exit point
     public GameObject[] waypoints;
 
@@ -39,6 +40,7 @@ public class Enemy : MonoBehaviour
         //Prepare Data
         enemy = GetComponent<Transform>(); //Get self transform of enemy
         sprite = GetComponent<SpriteRenderer>();
+        enemyManager = FindObjectOfType<EnemyManager>();
         
         //GET WAYPOINTS
         //Will order the objects by their hierarchy order. Top object will be index 0
@@ -60,7 +62,7 @@ public class Enemy : MonoBehaviour
         //Reduce order layer
         sortingOrder = sprite.sortingOrder;
 
-        activeEnemyCount = GameManager.instance.ActiveEnemyCount;
+        activeEnemyCount = enemyManager.ActiveEnemyCount;
         sprite.sortingOrder -= activeEnemyCount; //send back 1 layer
         sortingOrder = sprite.sortingOrder; //update internal tracker
 
@@ -177,8 +179,7 @@ public class Enemy : MonoBehaviour
             case exitTag:
                 //Despawn enemy
                 //Reduce number of active enemies
-                GameManager.instance.enemyReachedExit();
-                Destroy(gameObject);
+                enemyManager.despawnEnemy(gameObject);
                 break;
             default:
                 //Do nothing
@@ -188,43 +189,3 @@ public class Enemy : MonoBehaviour
     }
 
 }
-/* //OLD movement controller with fixed step (Might be better for low hardware)
- * 
-    //Seconds needed to call movement again. (Iterations per second)
-    private float navigationTime = 0f;
-    private float navigationUpdateTime = 0.02f; //OBSELETE (movefunc1)
-    private void enemyMoveControllerOLD()
-    {
-        //Check waypoints
-        if( waypoints.Length == 0) { return; }
-
-        //Keep track of navigation time by adding time passed to it.
-        //If navigationTime is still less than navigationUpdateTime, do not perform Movement
-        navigationTime += Time.deltaTime;
-        if( navigationTime < navigationUpdateTime)
-        {
-            //enough time has not yet passed to call another move
-            return;
-        }
-        if( target < checkpointCount)
-        {
-            //There are still checkpoints to visit
-            enemy.position = Vector2.MoveTowards(enemy.position, waypoints[target].transform.position, navigationTime);
-
-            //Save the current heading
-            currentHeading = enemy.position - waypoints[target].transform.position;
-
-            //Call directional controller to decide which way enemy is going
-            enemyDirectionController();
-
-        } else
-        {
-            //We have finished the array. GO to exit point
-            enemy.position = Vector2.MoveTowards(enemy.position, enemyExit.position, navigationTime);
-        }
-        //Reset Timer
-        navigationTime = 0f;
-
-
-    }
-*/
