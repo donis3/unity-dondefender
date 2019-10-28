@@ -6,6 +6,10 @@ TagManager:
   tags:
   - Enemy
   - Checkpoint
+  - TowerBtn
+  - Tower
+  - Ground
+  - BuildSite
   layers:
   - Default
   - TransparentFX
@@ -49,8 +53,14 @@ TagManager:
   - name: Background Objects
     uniqueID: 209112073
     locked: 0
+  - name: TowerFar
+    uniqueID: 2853397615
+    locked: 0
   - name: Enemy
     uniqueID: 2988038987
+    locked: 0
+  - name: TowerClose
+    uniqueID: 1017372017
     locked: 0
   - name: Foreground Objects
     uniqueID: 2484758337
