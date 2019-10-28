@@ -11,6 +11,9 @@ public class Enemy : MonoBehaviour
     //enemy speed
     public float speed = 1.5f;
 
+    //Difficulty coefficient
+    public float difficulty = 0.1f;
+
     //Internal constants
     private const string exitTag = "Finish"; //Despawner tag
     private const string waypointTag = "Checkpoint"; //Waypoint tag
