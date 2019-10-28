@@ -60,6 +60,13 @@ public class EnemyManager : MonoBehaviour
     private int enemyMax = 0; //Calculate total enemies that will be spawned throughout the level
     private int currentWave = 1; //Will start from 1 to enemyWaveMax
 
+    //Active enemies list
+    private List<Enemy> enemies = new List<Enemy>();
+    public List<Enemy> Enemies
+    {
+        get { return enemies; }
+    }
+
     
     private List<float> enemyDifficulties = new List<float>(); //Keep track of enemy difficulties
 
@@ -391,6 +398,7 @@ public class EnemyManager : MonoBehaviour
 
         //Instantiate an enemy prefab from enemies array as a gameobject 
         GameObject enemy = Instantiate(objEnemies[enemyIndex]) as GameObject;
+        Enemies.Add(enemy.GetComponent<Enemy>());
 
         enemy.transform.position = objSpawn.transform.position; //Move it to spawner
 
@@ -406,6 +414,7 @@ public class EnemyManager : MonoBehaviour
      */
     public void despawnEnemy(GameObject enemy)
     {
+        Enemies.Remove(enemy.GetComponent<Enemy>());
 
         //Despawn this enemy
         Destroy(enemy);

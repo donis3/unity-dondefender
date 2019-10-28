@@ -11,8 +11,8 @@ GameObject:
   - component: {fileID: 5073817719451490816}
   - component: {fileID: 5073817719451490817}
   m_Layer: 0
-  m_Name: EnemyManager 1
-  m_TagString: Untagged
+  m_Name: EnemyManager
+  m_TagString: EnemyManager
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -49,7 +49,13 @@ MonoBehaviour:
   - {fileID: 5289779212357083932, guid: 7e87a62e1086f1349a5993519a08b652, type: 3}
   - {fileID: 5606045766987449575, guid: cef4e8835f99a654283b901e325d0767, type: 3}
   - {fileID: 7812358432771881183, guid: 256dde2f0d450df4ca6a244b52f70837, type: 3}
-  enemyMax: 66
+  enemyWaveMax: 5
   enemyMaxActive: 7
   enemyPerSpawn: 1
+  enemyWaveIncrease: 1
+  levelDifficulty: 0.1
+  enemyVariety: 3
+  ignoreBelow: 10
+  enemyWaveDelay: 25
+  enemySpawnDelay: 0.1
   gameStarted: 0

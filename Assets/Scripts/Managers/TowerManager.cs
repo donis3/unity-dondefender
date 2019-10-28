@@ -11,6 +11,7 @@ public class TowerManager : MonoBehaviour
     private string buildSiteTag = "BuildSite";
     private SpriteRenderer spriteRenderer;
     private Sprite towerSprite;
+    private BuildSite[] buildSites;
     
     
     
@@ -22,6 +23,18 @@ public class TowerManager : MonoBehaviour
         towerButtons = FindObjectsOfType<TowerBtn>();
         spriteRenderer = GetComponent<SpriteRenderer>();
 
+        //Get BuildSites
+        GameObject[] buildSiteObjects = GameObject.FindGameObjectsWithTag(buildSiteTag);
+        
+        buildSites = new BuildSite[buildSiteObjects.Length];
+        if (buildSites.Length > 0)
+        {
+            for (int i = 0; i < buildSiteObjects.Length; i++)
+            {
+                buildSites[i] = buildSiteObjects[i].GetComponent<BuildSite>();
+            }
+        }
+
         if( spriteRenderer == null)
         {
             Debug.LogError("Couldn't find spriteRenderer for TowerManager");
@@ -29,6 +42,10 @@ public class TowerManager : MonoBehaviour
         if( towerButtons.Length == 0 )
         {
             Debug.LogError("Couldn't find tower UI buttons for TowerManager");
+        }
+        if(buildSiteObjects.Length == 0)
+        {
+            Debug.LogError("Couldn't find any tower-build sites.");
         }
 
     }
@@ -85,42 +102,23 @@ public class TowerManager : MonoBehaviour
             return;
         }
 
-        bool towerPlacedOk = false; //State of the tower
-
-        
-        GameObject newTower = Instantiate(towerBtnPressed.TowerObject); //Tower prefab -> scene object
-            
-         
-        
-        
         //Calculate where we've hit when we've clicked
         RaycastHit2D hit = Physics2D.Raycast(position, Vector2.zero );
         if (hit)
         {
-            if(hit.collider != null && hit.collider.tag != null && hit.collider.tag  == buildSiteTag) //if we've hit a buildSite
+            //Find the buildsite component
+            BuildSite buildSite = hit.collider.gameObject.GetComponent<BuildSite>();
+
+            if (hit.collider != null && hit.collider.tag != null && hit.collider.tag  == buildSiteTag) //if we've hit a buildSite
             {
-                Transform buildSiteTransform = hit.collider.gameObject.GetComponent<Transform>();
-                if( buildSiteTransform != null)
+                if( buildSite.isBuilt == false)
                 {
-                    newTower.transform.position = buildSiteTransform.position;
-                    towerPlacedOk = true; //Tower is perfectly placed.
+                    //Send buildsite the prefab to place on itself.
+                    buildSite.PlaceTower(towerBtnPressed.TowerObject);
+                    UnselectTower();
                 }
             }
         }
-        if( !towerPlacedOk)
-        {
-            //There was a problem with the tower placement
-            Destroy(newTower);
-            
-        } else
-        {
-            //Place the tower. We can unselect
-            UnselectTower();
-        }
-        
-        
-
-
         
     }
 
@@ -171,8 +169,13 @@ public class TowerManager : MonoBehaviour
                 RaycastHit2D pos = Physics2D.Raycast(mousePosition, Vector2.zero);
                 if(pos.collider != null && pos.collider.tag != null && pos.collider.tag == buildSiteTag)
                 {
-                    transform.position = pos.collider.gameObject.transform.position;
-                    spriteRenderer.color = new Color(0.01f, 0.92f, 0.03f, 0.8f);
+                    BuildSite collidedSite = pos.collider.gameObject.GetComponent<BuildSite>();
+                    
+                    if (collidedSite.isBuilt == false)
+                    {
+                        transform.position = pos.collider.gameObject.transform.position;
+                        spriteRenderer.color = new Color(0.01f, 0.92f, 0.03f, 0.8f);
+                    }
                 } else
                 {
                     spriteRenderer.color = new Color(1f, 0.3f, 0.01f, 0.2f);

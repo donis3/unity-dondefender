@@ -10,6 +10,8 @@ TagManager:
   - Tower
   - Ground
   - BuildSite
+  - Projectile
+  - EnemyManager
   layers:
   - Default
   - TransparentFX
@@ -67,4 +69,7 @@ TagManager:
     locked: 0
   - name: Decor
     uniqueID: 3434072071
+    locked: 0
+  - name: Projectile
+    uniqueID: 664349211
     locked: 0
