@@ -82,8 +82,7 @@ public class EnemyManager : MonoBehaviour
     private bool levelFinished = false;
     private int enemyKilledCounter = 0;
     private int enemyEscapedCounter = 0;
-    private int currentWaveSpawned = 0; // Spawn wavesize-spawned times for this wave when resumed. (Pausing during a wave spawn)
-    private float currentWaveDelay = 0f;
+    
 
     
 
@@ -344,6 +343,14 @@ public class EnemyManager : MonoBehaviour
                 else
                 {
                     Debug.LogError("Wave " + currentWave.ToString() + " has NOT spawned completely (" + waveSpawnCount.ToString() + " / " + CalculateWaveSize(currentWave).ToString() + " enemies)");
+                }
+
+                //End Game
+                if( currentWave >= enemyWaveMax)
+                {
+                    levelFinished = true;
+                    Debug.Log("Level finished");
+                    yield break;
                 }
 
                 /* ====================================================== */

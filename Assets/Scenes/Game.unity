@@ -1524,7 +1524,7 @@ PrefabInstance:
     - target: {fileID: 5073817719451490817, guid: fbdff6691ddbe4c48a7a4000cd98ff71,
         type: 3}
       propertyPath: enemyWaveMax
-      value: 5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5073817719451490817, guid: fbdff6691ddbe4c48a7a4000cd98ff71,
         type: 3}
