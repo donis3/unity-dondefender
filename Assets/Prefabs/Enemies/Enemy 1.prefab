@@ -71,7 +71,7 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: -1306928309
-  m_SortingLayer: 3
+  m_SortingLayer: 4
   m_SortingOrder: 500
   m_Sprite: {fileID: 21300000, guid: 0f2d83cae3c320247bd853e9c2abc8ac, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -162,7 +162,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba064625616a5164ab51ea0aaddd71ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 1.5
-  difficulty: 1
-  enemyExit: {fileID: 0}
-  waypoints: []
+  speed: 0.95
+  difficulty: 5

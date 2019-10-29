@@ -12,6 +12,11 @@ public class GameManager : MonoBehaviour
     //Instance Reference
     public static GameManager instance { get; private set; }
 
+    //Time Tracking
+
+    private float startTime = 0f;
+    private float runTime = 0f;
+
     //Generate an instance if needed. Do not allow more than one
     private void Awake()
     {
@@ -30,6 +35,9 @@ public class GameManager : MonoBehaviour
     //Input Controller
     private void Update()
     {
+        //Time Tracker
+        runTime += Time.deltaTime;
+
         if (Input.GetKeyDown("1") )
         {
             SceneManager.LoadScene("Menu");
@@ -40,8 +48,14 @@ public class GameManager : MonoBehaviour
             SceneManager.LoadScene("Game");
             
         }
+
         
 
+    }
+
+    public float getGameTime()
+    {
+        return runTime;
     }
 
 }

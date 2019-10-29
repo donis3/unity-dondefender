@@ -9,10 +9,14 @@ public class Enemy : MonoBehaviour
     private int target = 0;
 
     //enemy speed
-    public float speed = 1.5f;
+    [Header("Enemy Move Speed")]
+    [Range(0.1f, 3f)]
+    public float speed = 0.75f;
 
     //Difficulty coefficient
-    public float difficulty = 0.1f;
+    [Header("Enemy difficulty [0,1]")]
+    [Range(1f, 10f)]
+    public float difficulty = 1f;
 
     //Internal constants
     private const string exitTag = "Finish"; //Despawner tag
@@ -30,8 +34,8 @@ public class Enemy : MonoBehaviour
     private Transform enemy; //enemy object
     private SpriteRenderer sprite;
     private EnemyManager enemyManager;
-    public Transform enemyExit; //Location of exit point
-    public GameObject[] waypoints;
+    private Transform enemyExit; //Location of exit point
+    private GameObject[] waypoints;
 
 
     /** INITIALIZE

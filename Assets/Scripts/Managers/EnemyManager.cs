@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -36,7 +37,7 @@ public class EnemyManager : MonoBehaviour
     [Header("Difficulty Settings")]
     [Space(20)]
     [Tooltip("The harder the level, the stronger enemies will be choosen per level")]
-    [Range(0.1f, 1f)] [SerializeField] public float levelDifficulty = 0.1f; //How many enemies to spawn at once
+    [Range(1f, 50f)] [SerializeField] public float levelDifficulty = 0.1f; //Level difficulty
     [Tooltip("How many enemy types to include. Do not pass the amount of enemy prefabs you have included. ")]
     [Range(1, 10)] [SerializeField] public int enemyVariety = 3; //How many enemy types to spawn at once
     [Tooltip("Spawn chances below this number will be ignored")]
@@ -84,7 +85,7 @@ public class EnemyManager : MonoBehaviour
     [Space(20)]
     [Tooltip("Game is paused/active toggle")]
     public bool gameStarted = false; //toggle for game runtime
-    private bool waveManagerActive = false;
+    
 
     private bool levelFinished = false;
     private int enemyKilledCounter = 0;
@@ -106,16 +107,9 @@ public class EnemyManager : MonoBehaviour
         //Calculate total enemies this level
         if(enemyWaveMax > 0 && enemyPerSpawn > 0)
         {
-            //Apply gauss formula to calculate total number of enemies
-            if(enemyWaveMax > 1 && enemyWaveIncrease > 0)
-            {
-                enemyMax = (enemyWaveMax / 2) * (enemyPerSpawn + (enemyPerSpawn + ((enemyWaveMax-1) * enemyWaveIncrease)));
-                
-            }else
-            {
-                enemyMax = (enemyWaveMax * enemyPerSpawn);
-            }
+            enemyMax = CalculateTotalSpawnSize();
         }
+        
         
 
         //Get enemy difficulties and store them in list
@@ -152,7 +146,10 @@ public class EnemyManager : MonoBehaviour
 
         //Time scale
         Time.timeScale = 1;
-        
+
+        //min spawn delay
+        if (enemySpawnDelay < 0.1f) { enemySpawnDelay = 0.1f; } //Min spawn delay
+
     }
 
 
@@ -160,6 +157,11 @@ public class EnemyManager : MonoBehaviour
     {
 
         StartCoroutine("WaveManager");
+        
+        
+        
+
+        
     }
     private void Update()
     {
@@ -191,6 +193,12 @@ public class EnemyManager : MonoBehaviour
      * current wave no,
      * difficulty
      * and calculate chance to spawn each type
+     * 
+     * Math:
+     * LevelDifficulty - enemy difficulty = DeltaDif
+     * the smaller the delta, the higher we want the spawn chance. To convert it:
+     * 1000/deltaDif -> smaller numbers will become much higer
+     * SPECIAL CASE: if deltaDif = 0 -> MathError. convert to 0.1
      */
     public int[] createWaveComposition(int waveNo)
     {
@@ -199,90 +207,34 @@ public class EnemyManager : MonoBehaviour
             Debug.LogError("Enemy difficulties are not available. Can't provide wave composition");
             throw new System.Exception("Could not generate enemy wave composition. Enemy difficulties are not available");
         }
-        List<KeyValuePair<int, float>> finalizedSpawnChances = new List<KeyValuePair<int, float>>();
-
-        //Calculate wave difficulty (first wave easiest, last wave hardest)(Last wave will have 1 coefficient)
-        float waveDifficulty = levelDifficulty * ((float)waveNo / enemyWaveMax);
-        //Debug.Log("Level Difficulty: " + levelDifficulty.ToString("n3") + " Current Wave: " + waveNo.ToString() + " Total Waves: " + enemyWaveMax.ToString() + " Wave Difficulty: " + waveDifficulty.ToString("n3") );
-
-        //Divide the wave difficulty by enemy difficulty to find how close it is to the wave. The higer the more chanse to spawn
-        float[] enemyDifficultyProbability = new float[enemyDifficulties.Count];
-        for(int i = 0; i < enemyDifficulties.Count; i++)
-        {
-            enemyDifficultyProbability[i] = enemyDifficulties[i] / waveDifficulty;
-            //Debug.Log("Enemy " + i.ToString() + " division: " + enemyDifficultyProbability[i].ToString("n2"));
-        }
-        //Find total probabilities
-        float totalProb = enemyDifficultyProbability.Sum();
-
-        int totalIgnored = 0; // keep track of ignored enemies. If total reaches max; dont let the last enemy to be ignored too.
-        //Convert the probabilities to percentage
-        for (int i = 0; i < enemyDifficultyProbability.Length; i++)
-        {
-            enemyDifficultyProbability[i] = (enemyDifficultyProbability[i] / totalProb) * 100f;
-
-            //Ignore if below tolerance
-            if( enemyDifficultyProbability[i] >= ignoreBelow )
-            {
-                
-                //Debug.Log("+Enemy " + i + " Spawn Chanse: " + enemyDifficultyProbability[i].ToString("n3"));
-                finalizedSpawnChances.Add(new KeyValuePair<int, float>(i, enemyDifficultyProbability[i]));//Add the enemy index & spawn chanse
-            } else
-            {
-                totalIgnored++;
-                if( totalIgnored == enemyDifficultyProbability.Length)
-                {
-                    //Max ignore reached
-                    //Debug.Log("Max enemy ignore is reached. Keeping the last enemy in the spawn table.");
-                    finalizedSpawnChances.Add(new KeyValuePair<int, float>(i, enemyDifficultyProbability[i]));//Add the enemy index & spawn chanse
-                }
-                //Debug.Log("Enemy " + i + " Spawn Chanse: " + enemyDifficultyProbability[i].ToString("n3") + " -- IGNORED");
-            }
-
-        }
-
-        finalizedSpawnChances = Rhinotap.Tools.SortPair(finalizedSpawnChances, false); //Descending order. Big to small
-        
-        //Apply enemy variety if we have more than 1 enemy and enemy count is more than variety
-        if (finalizedSpawnChances.Count >  enemyVariety )
-        {
-            //Debug.Log("===================Total chanses: " + finalizedSpawnChances.Count.ToString() + " But variety is limited to " + enemyVariety.ToString());
-            for( int i = 0; i < finalizedSpawnChances.Count; i++)
-            {
-                //Remove elements after variety limit is reached. If chanses list is 3 of size. Variety : 2, remove the last element
-                if( i >= enemyVariety)
-                {
-                    //Debug.Log("Enemy Variety is reached, Removing Enemy Index of " + finalizedSpawnChances[i].Key.ToString());
-                    finalizedSpawnChances.RemoveAt(i);
-                }
-            }
-        }
 
         //Generate array for return
         int[] result = new int[objEnemies.Length];
 
         //Calculate wave size
-        int waveSize = enemyPerSpawn + ( (waveNo-1) * enemyWaveIncrease); //at wave 0, no increase
-        if( waveSize <= 0)
-        {
-            throw new System.Exception("========Could not calculate wave size. Its either 0 or negative");
-        }
+        int waveSize = CalculateWaveSize(waveNo);
+
+        //Calculate wave difficulty
+        float waveDifficulty = levelDifficulty * ((float)waveNo / enemyWaveMax);
+
+        //Generate spawn chances
+        
+        Rhinotap.SpawnChance newChance = new Rhinotap.SpawnChance(waveDifficulty, enemyDifficulties.ToArray(), ignoreBelow);
+        newChance.Variety = enemyVariety;
+        int[] spawnChances = newChance.Result();
+
+        newChance.Report(spawnChances);
+        
+        
+
         //Create Percentages
-        int[] percentages = new int[objEnemies.Length];
-
-        for(int i = 0; i < finalizedSpawnChances.Count; i++)
-        {
-            if(finalizedSpawnChances[i].Key < objEnemies.Length)
-            percentages[finalizedSpawnChances[i].Key] = (int)Mathf.Round(finalizedSpawnChances[i].Value);
-        }
-
-        Rhinotap.Choose chooseEnemy = new Rhinotap.Choose(percentages);
+        Rhinotap.Choose chooseEnemy = new Rhinotap.Choose(spawnChances);
 
         //Generate Results
         for(int i = 0; i < waveSize; i++)
         {
-            int enemyIndex = chooseEnemy.NextValue();
-            result[enemyIndex] += 1;
+            int enemyIndex = chooseEnemy.NextValue(); //Choose an enemy based on spawn chance
+            result[enemyIndex] += 1; //Increment this enemy type by 1 (how many times it will spawn)
         }
 
         return result;
@@ -292,7 +244,7 @@ public class EnemyManager : MonoBehaviour
     IEnumerator WaveManager()
     {
         
-        while(true )
+        while(levelFinished == false )
         {
             //Paused State
             if (!gameStarted)
@@ -303,10 +255,10 @@ public class EnemyManager : MonoBehaviour
             //Wave Delay 
             yield return new WaitForSeconds(enemyWaveDelay);
 
-            int currentWaveSize = enemyPerSpawn + ((currentWave - 1) * enemyWaveIncrease); //Enemy number to spawn this wave
+            int currentWaveSize = CalculateWaveSize(currentWave);
             int availableActiveEnemySlots = enemyMaxActive - enemyActiveCount;
 
-            if (enemySpawnDelay < 0.1f) { enemySpawnDelay = 0.1f; } //Min spawn delay
+            
 
             //If there are enough slots
             if (currentWaveSize <= availableActiveEnemySlots)
@@ -318,10 +270,14 @@ public class EnemyManager : MonoBehaviour
 
                 //Get wave composition
                 int[] waveComposition = createWaveComposition(currentWave);
-                if (waveComposition.Length == 0) { yield break; } //Exit if no enemy
+                if (waveComposition.Length == 0) {
+                    //Could not calculate wave composition
+                    Debug.LogError("Wave no " + currentWave + " did not yield any spawns. Exiting Coroutine");
+                    yield break;
+                }
 
 
-                int waveSpawnCount = 0;
+                
                 //i: enemy j: spawn this times
                 for (int i = 0; i < waveComposition.Length; i++)
                 {
@@ -333,30 +289,19 @@ public class EnemyManager : MonoBehaviour
                         {
                             
                             spawnEnemy(i);
-                            waveSpawnCount++;
+                            
                             yield return new WaitForSeconds(enemySpawnDelay); //Wait for given delay
 
                         }//Eol enemy spawn amount
                     }
                 }//Eol enemy types
-
-
-                //Wave Spawner complete
-                if (waveSpawnCount == CalculateWaveSize(currentWave))
-                {
-                    //Debug.Log("Wave " + currentWave.ToString() + " has spawned completely (" + CalculateWaveSize(currentWave).ToString() + " enemies)");
-                    currentWave++;
-                }
-                else
-                {
-                    Debug.LogError("Wave " + currentWave.ToString() + " has NOT spawned completely (" + waveSpawnCount.ToString() + " / " + CalculateWaveSize(currentWave).ToString() + " enemies)");
-                }
+                currentWave++;
 
                 //End Game
-                if( currentWave >= enemyWaveMax)
+                if( currentWave > enemyWaveMax)
                 {
                     levelFinished = true;
-                    //Debug.Log("Level finished");
+                    Debug.Log("GAME STATE CHANGE: Level finished. Stopping waves");
                     yield break;
                 }
 
@@ -381,10 +326,19 @@ public class EnemyManager : MonoBehaviour
      */
     private int CalculateWaveSize(int waveNo)
     {
-        int result = enemyPerSpawn + ((currentWave - 1) * enemyWaveIncrease);
+        int result = enemyPerSpawn + ((waveNo - 1) * enemyWaveIncrease);
         return result;
     }
 
+    private int CalculateTotalSpawnSize()
+    {
+        int total = 0;
+        for(int i = 1; i <= enemyWaveMax; i++)
+        {
+            total += CalculateWaveSize(i);
+        }
+        return total;
+    }
 
     /**
      * Sawn a single enemy of the given index
