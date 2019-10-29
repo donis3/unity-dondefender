@@ -314,7 +314,7 @@ public class EnemyManager : MonoBehaviour
                 //SPAWN ENEMY WAVE
                 /* ====================================================== */
 
-                Debug.Log("====Spawning wave: " + currentWave.ToString());
+                //Debug.Log("====Spawning wave: " + currentWave.ToString());
 
                 //Get wave composition
                 int[] waveComposition = createWaveComposition(currentWave);
@@ -344,7 +344,7 @@ public class EnemyManager : MonoBehaviour
                 //Wave Spawner complete
                 if (waveSpawnCount == CalculateWaveSize(currentWave))
                 {
-                    Debug.Log("Wave " + currentWave.ToString() + " has spawned completely (" + CalculateWaveSize(currentWave).ToString() + " enemies)");
+                    //Debug.Log("Wave " + currentWave.ToString() + " has spawned completely (" + CalculateWaveSize(currentWave).ToString() + " enemies)");
                     currentWave++;
                 }
                 else
@@ -356,7 +356,7 @@ public class EnemyManager : MonoBehaviour
                 if( currentWave >= enemyWaveMax)
                 {
                     levelFinished = true;
-                    Debug.Log("Level finished");
+                    //Debug.Log("Level finished");
                     yield break;
                 }
 
