@@ -149,7 +149,19 @@ namespace Rhinotap
 
     public static class Tools
     {
+        public static float RandomFloat(float min, float max)
+        {
+            System.Random randomizer = new System.Random();
 
+            double mind = (double)min;
+            double maxd = (double)max;
+            double result = randomizer.NextDouble() * (maxd - mind) + mind;
+
+
+
+
+            return (float)result;
+        }
         /**
          * Sort a keyvaluepair list by its values.
          * Used for index => value sorting

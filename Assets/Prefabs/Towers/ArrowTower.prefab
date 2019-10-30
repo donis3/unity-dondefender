@@ -206,3 +206,4 @@ MonoBehaviour:
   dmgType: 1
   projectile: {fileID: 4882813819560900002, guid: 205775ad804f15140afa0b46414a750c,
     type: 3}
+  projectileOffset: {x: -0.2, y: 0.3}

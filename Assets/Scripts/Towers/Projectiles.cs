@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections;
 public enum projectileType
 {
     rock, arrow, fireball
@@ -12,11 +13,50 @@ public class Projectiles : MonoBehaviour
     [SerializeField]
     private projectileType dmgType;
 
+    [Header("Speed")]
+    [SerializeField]
+    [Range(3f, 8f)]
+    private float speed = 5f;
+
+    [Header("Screen Removal Time")]
+    [SerializeField]
+    [Range(0f, 8f)]
+    [Space(20)]
+    private float removeAfter = 0f;
+
     public int Damage
     {
         get { return damage; }
     }
     public projectileType DmgType {
         get { return dmgType; }
+    }
+
+    public float Speed
+    {
+        get { return speed; }
+    }
+
+    public void DestroyObject()
+    {
+        Destroy(gameObject);
+    }
+
+    public void Remove()
+    {
+        if( gameObject != null)
+        {
+            StartCoroutine("RemoveProjectile");
+        }
+    }
+
+    IEnumerator RemoveProjectile()
+    {
+        if( removeAfter > 0f)
+        {
+            yield return new WaitForSeconds(removeAfter);
+        }   
+        DestroyObject();
+        yield return null;
     }
 }

@@ -178,8 +178,11 @@ MonoBehaviour:
   radius: 3
   shootingSpeed: 1
   dmgType: 2
+  accuracy: 10
   projectile: {fileID: 2159753616555019475, guid: 8cb57d458e778a045aa065d4def53fc3,
     type: 3}
+  targetEnemy: {fileID: 0}
+  projectileOffset: {x: -0.05, y: 0.35}
 --- !u!61 &1014197414
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -197,7 +200,7 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.52, y: 0.2}
-    oldSize: {x: 1.5058824, y: 1.5058824}
+    oldSize: {x: 1.28, y: 1.28}
     newSize: {x: 1.28, y: 1.28}
     adaptiveTilingThreshold: 0.5
     drawMode: 0

@@ -164,3 +164,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speed: 1.5
   difficulty: 10
+  health: 100

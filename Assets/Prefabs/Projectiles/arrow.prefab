@@ -122,3 +122,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   damage: 35
   dmgType: 1
+  speed: 5
+  removeAfter: 5

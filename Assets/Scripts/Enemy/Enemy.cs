@@ -18,15 +18,31 @@ public class Enemy : MonoBehaviour
     [Range(1f, 10f)]
     public float difficulty = 1f;
 
+    //Health
+    [Header("Enemy Health [1,10000]")]
+    [Range(1, 10000)]
+    public int health = 10;
+
+    //Components
+    private Animator anim;
+
     //Internal constants
     private const string exitTag = "Finish"; //Despawner tag
     private const string waypointTag = "Checkpoint"; //Waypoint tag
+    private const string projectileTag = "Projectile";
     //Internal Vars
     private int checkpointCount = 0; //Total checkpoint count
     private Vector2 currentHeading;
+
     private int sortingOrder = 0; // current sprite sorting order
     private int sortingOrderIfGoingUpwards = 0; //if enemy goes up, change sorting layer because background objects go foreground
     private int activeEnemyCount = 0;
+    private bool isDead = false;
+
+    public bool IsDead
+    {
+        get { return isDead; }
+    }
     
 
 
@@ -38,6 +54,17 @@ public class Enemy : MonoBehaviour
     private GameObject[] waypoints;
 
 
+    private void Awake()
+    {
+
+        //Get animator component
+        anim = GetComponent<Animator>();
+        if (anim == null)
+        {
+            Debug.LogError("Could not find animator component for enemy");
+        }
+
+    }
     /** INITIALIZE
      * Get required objects, components
      * Verify requirements
@@ -86,6 +113,7 @@ public class Enemy : MonoBehaviour
         
     }
 
+    /*====================================| MOVEMENT OF ENEMY THROUGHOUT THE MAP |====================================*/
     /** MOVEMENT
      * Move the enemy towards the next checkpoint
      * Use speed coefficient
@@ -93,8 +121,13 @@ public class Enemy : MonoBehaviour
      */
     private void enemyMoveController()
     {
+        //Check death
+        if (isDead) { return; }
+
         //Check waypoints
         if (waypoints.Length == 0) { return; }
+
+        
 
         if (target < checkpointCount)
         {
@@ -169,6 +202,37 @@ public class Enemy : MonoBehaviour
 
     }
 
+    /*====================================| ENEMY SPAWN & DESPAWN |====================================*/
+
+    /*====================================| ENEMY DAMAGE |====================================*/
+    private void takeDamage(int damage)
+    {
+        if( damage > 0)
+        {
+            if( damage <= health)
+            {
+                health -= damage;
+                //Hurt animation 
+                anim.Play("Hurt");
+            }else
+            {
+                health = 0;
+                //Death animation
+                anim.Play("Death");
+                Die();
+            }
+        }
+        //Debug.Log("Im hit. My hp is: " + health);
+    }
+
+    /*====================================| ENEMY DEATH |====================================*/
+
+    private void Die()
+    {
+        isDead = true;
+    }
+
+    /*====================================| COLLIDERS |====================================*/
     /**TRIGGERS
      * Keep track of triggers
      * When exit point is triggerd, destroy object and inform GameManager
@@ -187,6 +251,16 @@ public class Enemy : MonoBehaviour
                 //Despawn enemy
                 //Reduce number of active enemies
                 enemyManager.despawnEnemy(gameObject);
+                break;
+
+            case projectileTag:
+                //Enemy is hit with a projectile
+                Projectiles projectile = collision.gameObject.GetComponent<Projectiles>();//Projectile
+                //Take damage
+                takeDamage(projectile.Damage);
+                //Destroy the projectile
+                projectile.DestroyObject();
+
                 break;
             default:
                 //Do nothing
