@@ -118,7 +118,11 @@ public class TowerManager : MonoBehaviour
         else
         {
             //Check Price
-
+            if(btn.Affordable == false )
+            {
+                LevelManager.instance.Feedback("Not enough money..");
+                return;
+            }
             //Select new object and highlight
             towerBtnPressed = btn;
             btn.GetComponent<Outline>().enabled = true;
@@ -155,6 +159,14 @@ public class TowerManager : MonoBehaviour
             return;
         }
 
+        if( LevelManager.instance.Money < towerBtnPressed.Price)
+        {
+            //Cant afford
+            UnselectTower();
+            LevelManager.instance.Feedback("Can't afford this tower");
+            return;
+        }
+
         //Calculate where we've hit when we've clicked
         RaycastHit2D hit = Physics2D.Raycast(position, Vector2.zero, 100000f, 1 << buildSiteLayerIndex);
         if (hit)
@@ -168,6 +180,9 @@ public class TowerManager : MonoBehaviour
                 {
                     //Send buildsite the prefab to place on itself.
                     buildSite.PlaceTower(towerBtnPressed.TowerObject);
+
+                    //Remove the price
+                    LevelManager.instance.SpendMoney(towerBtnPressed.Price);
                     lastTowerPlaced = Time.time;
                     UnselectTower(); //unselect the tower button
                 }

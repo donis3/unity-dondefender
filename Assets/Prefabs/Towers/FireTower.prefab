@@ -175,7 +175,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a3de426dadc74b94681f7720841ffd82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  radius: 3
+  radius: 5
   shootingSpeed: 1
   dmgType: 2
   accuracy: 10

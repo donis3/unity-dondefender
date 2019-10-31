@@ -47,6 +47,9 @@ TextureImporter:
   - first:
       213: -8775848001264631878
     second: btnTrash
+  - first:
+      213: -8445939435616580311
+    second: btnCheckGray
   externalObjects: {}
   serializedVersion: 10
   mipmaps:
@@ -469,7 +472,7 @@ TextureImporter:
         width: 284
         height: 285
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -477,6 +480,27 @@ TextureImporter:
       bones: []
       spriteID: 96260903a5e86d442a3370beb66bb11c
       internalID: -8775848001264631878
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: btnCheckGray
+      rect:
+        serializedVersion: 2
+        x: 2519
+        y: 2671
+        width: 285
+        height: 286
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5d2060ebdd0dac74eb1824d79ea3e759
+      internalID: -8445939435616580311
       vertices: []
       indices: 
       edges: []

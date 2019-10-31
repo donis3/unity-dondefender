@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -22,6 +23,16 @@ public class Enemy : MonoBehaviour
     [Header("Enemy Health [1,10000]")]
     [Range(1, 10000)]
     public int health = 10;
+
+    //Money
+    [Header("Enemy Money Reward Minimum")]
+    [Space(20)]
+    [Range(1, 10000)]
+    public int rewardMin = 10;
+    //Money
+    [Header("Enemy Money Reward Maximum")]
+    [Range(1, 10000)]
+    public int rewardMax = 20;
 
     //Components
     private Animator anim;
@@ -236,6 +247,25 @@ public class Enemy : MonoBehaviour
     private void Die()
     {
         isDead = true;
+    }
+
+    public void rewardMoney()
+    {
+        int deathMoney;
+        if( rewardMin > 0 && rewardMax > 0 && rewardMin <= rewardMax)
+        {
+             deathMoney = LevelManager.instance.random.Next(rewardMin, rewardMax);
+        } else
+        {
+            deathMoney = (int)Math.Round(difficulty * 5f);
+        }
+        //Calculate reward
+        if( deathMoney <= 0)
+        {
+            deathMoney = GameSettings.MinDeathMoney;
+        }
+
+        LevelManager.instance.GetMoney(deathMoney);
     }
 
     /*====================================| COLLIDERS |====================================*/

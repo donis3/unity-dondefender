@@ -266,7 +266,7 @@ public class EnemyManager : MonoBehaviour
             {
                 lastWaveSpawned = true;
                 waveManagerRunning = false;
-                Debug.Log("Last wave have spawned. Stopping enemy manager");
+                LevelManager.instance.Feedback("Last wave have spawned");
                 yield break;
             }
 
@@ -281,7 +281,10 @@ public class EnemyManager : MonoBehaviour
             }
 
             //Wave Delay 
-            LevelManager.instance.Feedback("Enemies are coming in " + Math.Round((double)enemyWaveDelay) + " seconds..");
+            if (lastCompletelySpawnedWave < 1)
+            {
+                LevelManager.instance.Feedback("First wave is coming in " + Math.Round((double)enemyWaveDelay) + " seconds..", 1f);
+            }
             yield return new WaitForSeconds(enemyWaveDelay);
 
             int currentWaveSize = CalculateWaveSize(currentWave);
@@ -358,7 +361,7 @@ public class EnemyManager : MonoBehaviour
     /**
      * Calculate enemy size of a wave
      */
-    private int CalculateWaveSize(int waveNo)
+    public int CalculateWaveSize(int waveNo)
     {
         int result = enemyPerSpawn + ((waveNo - 1) * enemyWaveIncrease);
         return result;
@@ -405,7 +408,7 @@ public class EnemyManager : MonoBehaviour
 
     public void Lose()
     {
-        Debug.Log("You've Lost");
+        
         StopCoroutine("WaveManager");
         gameLost = true;
     }
@@ -414,6 +417,10 @@ public class EnemyManager : MonoBehaviour
     {
         deadEnemies.Add(enemy.GetComponent<Enemy>());
         Enemies.Remove(enemy.GetComponent<Enemy>());
+
+        //Gain money
+        enemy.GetComponent<Enemy>().rewardMoney();
+
         if (enemyActiveCount > 0)
         {
             enemyActiveCount--;
@@ -436,13 +443,13 @@ public class EnemyManager : MonoBehaviour
         {
             enemyActiveCount--;
         }
-        
 
-        if( TotalEscaped >= enemyEscapeAllowed)
+        enemyEscapedCounter++;
+        if ( TotalEscaped >= enemyEscapeAllowed)
         {
             Lose();
             return;
         }
-        enemyEscapedCounter++;
+        
     }
 }

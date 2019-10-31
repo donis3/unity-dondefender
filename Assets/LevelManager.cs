@@ -12,10 +12,10 @@ public class LevelManager : MonoBehaviour
     //Current Level
     [Header("Level Identifier")]
     [SerializeField]
-    [Range(0,1000)]
+    [Range(1,1000)]
     private int level = 0;
     //Getters
-    public int LevelDisplay { get { return level + 1; } }//Level number starts from 1. 0->1 (For GUI)
+    public int LevelDisplay { get { return level; } }//Level number starts from 1. 0->1 (For GUI)
     public int Level { get { return level; } }
 
     private bool wavesPaused = true;
@@ -26,16 +26,26 @@ public class LevelManager : MonoBehaviour
 
     /*=============| Player Data For This Level |================*/
     //Player current money amount
-    private int money = 10;
+    private int money = 0;
     private int previousMoney = 0;//Anti Cheat
     public int Money { get { return money; } }
+    private int levelStars = 0;// 0 means not completed. 
 
 
+    /*==============|Tools|=============*/
+    public System.Random random = new System.Random();
 
     /*==============|Data Trackers|=============*/
 
 
     private int shownWaveEndScreenFor = -1;
+
+    private int totalMoneyGain = 0;
+    private int levelScore = 0;
+    private int levelMaxScore = 0;
+    private int levelSuccessPercentage = 0;
+
+    private bool autoWaveActive = false;
 
 
     /*============|UI OBJECTS|==============*/
@@ -56,7 +66,21 @@ public class LevelManager : MonoBehaviour
     private GameObject feedbackSystem;
     private Text feedback;
 
+    //WinScreen
+    private CanvasGroup winScreen;
+    private Button btnNextLevel;
+    private GameObject lvlCompleteTxt;
+    private GameObject[] winStars;
 
+    //Auto Wave Toggle
+    private Button autoWave;
+
+    //Speed Toggle
+    private Button speedToggle;
+    private Text speedToggleTxt;
+
+    [Header("Play/Pause button sprites")]
+    [Space(20)]
     //Sprites
     public Sprite btnPlayNormal;
     public Sprite btnPlayPaused;
@@ -81,7 +105,7 @@ public class LevelManager : MonoBehaviour
         GameManager.instance.State = gameState.level;
 
         //Load required data & Objects
-        level = GameManager.instance.Level;
+        if(level <= 1) { level = 1; }
         playToggle = GameObject.Find("btnPlayToggle");
 
         uiCurrentMoney   = GameObject.Find("uiCurrentMoney");
@@ -101,6 +125,33 @@ public class LevelManager : MonoBehaviour
         pauseMenuRestartBtn = GameObject.Find("btnRestart");
         pauseMenuResumeBtn = GameObject.Find("btnResume");
         pauseMenu.SetActive(false);
+
+        //Win menu items
+        Transform winBanner = pauseMenu.transform.Find("winScreen");
+        winScreen = winBanner.GetComponent<CanvasGroup>();
+        btnNextLevel = winBanner.Find("btnNext").GetComponent<Button>();
+        lvlCompleteTxt = pauseMenu.transform.Find("lvlCompleteTxt").gameObject;
+        lvlCompleteTxt.SetActive(false);
+
+        //Score
+        winStars = new GameObject[3];
+        winStars[0] = winBanner.Find("Stars/Star1").gameObject;
+        winStars[1] = winBanner.Find("Stars/Star2").gameObject;
+        winStars[2] = winBanner.Find("Stars/Star3").gameObject;
+        winStars[0].SetActive(false);
+        winStars[1].SetActive(false);
+        winStars[2].SetActive(false);
+
+        //Auto Wave
+        autoWave = GameObject.Find("btnAutoWave").GetComponent<Button>();
+        autoWave.onClick.AddListener(ToggleAutoWave);
+
+        //Speed toggle
+        speedToggle = GameObject.Find("speedToggle/btnSpeedToggle").GetComponent<Button>();
+        speedToggleTxt = speedToggle.transform.Find("Text").GetComponent<Text>();
+
+        speedToggle.onClick.AddListener(GameManager.instance.ToggleSpeed2x);
+
 
         //End of wave splash
         waveComplete     = GameObject.Find("waveComplete").GetComponent<CanvasGroup>();
@@ -122,8 +173,11 @@ public class LevelManager : MonoBehaviour
         Button btnQuit = pauseMenuQuitBtn.GetComponent<Button>();
         btnQuit.onClick.AddListener(GameManager.instance.QuitLevel);
 
+        //Load next level(Win Screen)
+        btnNextLevel.onClick.AddListener(LoadNext);
+
         //Print current level
-        uiCurrentLevel.GetComponent<Text>().text = (level+1).ToString();
+        uiCurrentLevel.GetComponent<Text>().text = (level).ToString();
 
         //print total waves
         uiTotalWave.GetComponent<Text>().text = EnemyManager.instance.TotalWaves.ToString();
@@ -132,13 +186,14 @@ public class LevelManager : MonoBehaviour
         uiMaxEscaped.GetComponent<Text>().text = EnemyManager.instance.EnemyEscapeAllowed.ToString();
         uiCurrentEscaped.GetComponent<Text>().text = "0";
 
+        //Add money
+        AddStartingMoney();
 
         StartCoroutine("UpdateUiElements");
         StartCoroutine("ShowFeedback");
 
-        Feedback("Welcome");
-        Feedback("HAHAHA");
-        Feedback("Shut up");
+
+        
     }
 
 
@@ -161,6 +216,10 @@ public class LevelManager : MonoBehaviour
     }
     private void ShowWaveBtn()
     {
+        if( autoWaveActive == true)
+        {
+            return;
+        }
         btnWaveStart.SetActive(true);
     }
 
@@ -194,9 +253,49 @@ public class LevelManager : MonoBehaviour
         yield break;
     }
 
+    private void ToggleAutoWave()
+    {
+        autoWaveActive = !autoWaveActive;//toggle
+
+        //Set color
+        if(autoWaveActive)
+        {
+            autoWave.GetComponent<Image>().color = new Color(0.25f, 1f, 0.1f, 1f);
+        } else
+        {
+            autoWave.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
+        }
+    }
 
     /*|==========================| ENEMY Management ===========================| */
     
+    public bool CheckWinStatus()
+    {
+        //If the last wave have not spawned yet, level cant complete
+        if(EnemyManager.instance.LastCompletelySpawnedWave != EnemyManager.instance.TotalWaves)
+        {
+            return false;
+        }
+        if(EnemyManager.instance.ActiveEnemyCount > 0)
+        {
+            return false;
+        }
+        if(EnemyManager.instance.Enemies.Count > 0)
+        {
+            return false;
+        }
+        if( EnemyManager.instance.GameLost == true )
+        {
+            return false;
+        }
+        if( EnemyManager.instance.TotalEscaped > EnemyManager.instance.EnemyEscapeAllowed )
+        {
+            return false;
+        }
+
+        return true;
+
+    }
 
     /*|==========================| Game Management ===========================| */
 
@@ -232,6 +331,7 @@ public class LevelManager : MonoBehaviour
     }
 
 
+    //Lose Screen
     public void ShowGameOver()
     {
         pauseMenu.SetActive(true);
@@ -250,12 +350,134 @@ public class LevelManager : MonoBehaviour
 
     }
 
+    //Win Screen /Level complete
+    public void ShowWinScreen()
+    {
+        winScreen.alpha = 1f;
+        winScreen.interactable = true;
+        winScreen.blocksRaycasts = true;
+        pauseMenuResumeBtn.SetActive(false);//disable pause btn
+        pauseMenu.SetActive(true);
+
+        int score = CalculateScore();
+        int stars = 0;
+        if (score >= 0 && score <= 33) { stars = 1; }
+        else if (score > 33 && score < GameSettings.MinScoreForPerfect) { stars = 2; }
+        else if (score >= GameSettings.MinScoreForPerfect) { stars = 3; }
+        //Save stars
+        levelStars = stars;
+
+        //Save Progress if this one is higher
+        GameManager.instance.SaveLevelProgress(level, stars);
+        //Show win screen
+        StartCoroutine(WinScreenAnimation(stars));
+    }
+
+    private  int CalculateScore()
+    {
+        if( CheckWinStatus() == false )
+        {
+            return 0;
+        }
+        int totalAllowed = EnemyManager.instance.EnemyEscapeAllowed;
+        int totalEscaped = EnemyManager.instance.TotalEscaped;
+        float unescaped = (float)totalAllowed - (float)totalEscaped;
+        if( unescaped <= 0f)
+        {
+            unescaped = 0.1f;
+        }
+        if( totalAllowed <= 0)
+        {
+            return 100;
+        }
+        float percentage = (unescaped / (float)totalAllowed) * 100;
+        int score = (int)Math.Round(percentage);
+
+
+        return score;
+        
+    }
+
+    //Win screen stars animator
+    IEnumerator WinScreenAnimation(int stars)
+    {
+        
+        lvlCompleteTxt.SetActive(true);
+        lvlCompleteTxt.transform.localScale = Vector2.one * 0.1f;
+        for (int i = 0; i < 17; i++ )
+        {
+            double pow = Math.Pow((double)i, 2d);
+            if ( i <= 8)
+            {
+                
+                yield return new WaitForSecondsRealtime(0.05f);
+                
+                if( i == 8)
+                {
+                    lvlCompleteTxt.transform.localScale = new Vector2(1.8f, 1.8f);
+                }else
+                {
+                    lvlCompleteTxt.transform.localScale = Vector2.one * 0.05f * (float)pow;
+                }
+            } else
+            {
+                yield return new WaitForSecondsRealtime(0.05f);
+                lvlCompleteTxt.transform.localScale = new Vector2(lvlCompleteTxt.transform.localScale.x-0.1f, lvlCompleteTxt.transform.localScale.y - 0.1f);
+            }
+            
+            
+        }
+        lvlCompleteTxt.transform.localScale = Vector2.one;
+
+        yield return new WaitForSecondsRealtime(0.5f);
+        //Show Stars
+        if ( stars > 0)
+        {
+            for(int i = 0; i < stars; i++)
+            {
+                winStars[i].SetActive(true);
+                if(i != 2) { 
+                    yield return new WaitForSecondsRealtime(0.5f);
+                }else
+                {
+                    for(int j = 0; j < 10; j++)
+                    {
+                        yield return new WaitForSecondsRealtime(0.05f);
+                        if( winStars[i].transform.localScale.x < 1.5f && j < 5)
+                        {
+                            winStars[i].transform.localScale = new Vector2(winStars[i].transform.localScale.x + 0.1f, winStars[i].transform.localScale.y + 0.1f);
+                        }else if(winStars[i].transform.localScale.x > 1f)
+                        {
+                            winStars[i].transform.localScale = new Vector2(winStars[i].transform.localScale.x - 0.1f, winStars[i].transform.localScale.y - 0.1f);
+                        }else if(winStars[i].transform.localScale.x <= 1f)
+                        {
+                            break;
+                        }
+                    }
+                    winStars[i].transform.localScale = Vector2.one;
+                    continue;
+                }
+
+            }
+        }
+    }
+
+
+    //Ask game manager to load next level
+    private void LoadNext()
+    {
+        GameManager.instance.LoadNextLevel(level);
+    }
+
 
     /*|==========================| Money Management ===========================| */
     public void GetMoney(int amount)
     {
         if( amount <= GameSettings.MaxMoneyIncrement)
+        {
             money += Math.Abs(amount);
+            totalMoneyGain += Math.Abs(amount);
+        }
     }
 
     public void SpendMoney(int amount)
@@ -266,6 +488,14 @@ public class LevelManager : MonoBehaviour
         } else
         {
             money -= Math.Abs(amount);
+        }
+    }
+
+    public void WaveEndMoneyCheck()
+    {
+        if(money < GameSettings.MinMoney)
+        {
+            money = GameSettings.MinMoney;
         }
     }
 
@@ -288,6 +518,16 @@ public class LevelManager : MonoBehaviour
         uiCurrentMoney.GetComponent<Text>().text = money.ToString();
     }
 
+    public void AddStartingMoney()
+    {
+        int startingMoney = GameSettings.StartingMoney;
+        float bonus = 0f;
+        if( level > 0)
+        {
+            bonus = ((float)startingMoney * (float)level) / 10f; //Bonus is %10 of level*starting money. if lvl 100, starting is 40 u get 400
+        }
+        GetMoney((int)Math.Round((double)bonus) + startingMoney);
+    }
 
     IEnumerator UpdateUiElements()
     {
@@ -311,12 +551,30 @@ public class LevelManager : MonoBehaviour
             //Update wave btn
             SetWaveBtnText();
 
+            //Check game speed
+            if(GameManager.instance.GameSpeed > 1f)
+            {
+                speedToggle.GetComponent<Image>().color = new Color(0.2f, 0.95f, 0.1f);
+                speedToggleTxt.color = new Color(1f, 1f, 1f);
+            }else
+            {
+                speedToggle.GetComponent<Image>().color = new Color(1f, 1f, 1f);
+                speedToggleTxt.color = new Color(0.7f, 0.7f, 0.7f);
+            }
+
             //Check game lost
             if(EnemyManager.instance.GameLost)
             {
                 //Youve lost. Show end screen
-                Debug.Log("UI -> GAME OVER");
                 ShowGameOver();
+                yield break;
+            }
+
+            //Check game won
+            if( CheckWinStatus() == true )
+            {
+                Feedback("Level Complete!");
+                ShowWinScreen();
                 yield break;
             }
 
@@ -328,14 +586,26 @@ public class LevelManager : MonoBehaviour
                 if( EnemyManager.instance.LastCompletelySpawnedWave == EnemyManager.instance.TotalWaves)
                 {
                     //Game has ended
-                    //Show win screen
+                    //Do nothing. CheckWinStatus will take over
                 }else
                 {
                     //Current wave have spawned fully. Check active count
                     if (EnemyManager.instance.ActiveEnemyCount == 0)
                     {
-                        ShowWaveBtn();
+                        //Wave cleared
+                        
                         StartCoroutine("ShowWaveEnd");
+
+                        yield return new WaitForSeconds(1f);
+                        ShowWaveBtn();
+
+                        //Press the button if auto is active
+                        if(autoWaveActive)
+                        {
+                            yield return new WaitForSecondsRealtime(1f);
+                            btnWaveStart.GetComponent<Button>().onClick.Invoke();//Auto Click
+                        }
+
                     }
                 }
                 
@@ -345,17 +615,17 @@ public class LevelManager : MonoBehaviour
     }
 
 
-
-
-    public void Feedback(string message)
+    /*====================| FEEDBACK SYSTEM |===========================*/
+    public void Feedback(string message, float wait = 5f)
     {
+        waitPerMessage = wait;
         if( !feedbacks.Contains(message))
             feedbacks.Add(message);
     }
     private List<string> feedbacks = new List<string>();
+    private float waitPerMessage = 5f;
     IEnumerator ShowFeedback()
     {
-        float waitPerMessage = 5f;
         CanvasGroup canvas = feedbackSystem.GetComponent<CanvasGroup>();
         canvas.alpha = 0f;
 

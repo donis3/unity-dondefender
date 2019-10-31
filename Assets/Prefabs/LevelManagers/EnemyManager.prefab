@@ -49,13 +49,13 @@ MonoBehaviour:
   - {fileID: 5289779212357083932, guid: 7e87a62e1086f1349a5993519a08b652, type: 3}
   - {fileID: 5606045766987449575, guid: cef4e8835f99a654283b901e325d0767, type: 3}
   - {fileID: 7812358432771881183, guid: 256dde2f0d450df4ca6a244b52f70837, type: 3}
-  enemyWaveMax: 5
-  enemyMaxActive: 7
-  enemyPerSpawn: 1
-  enemyWaveIncrease: 1
-  levelDifficulty: 0.1
+  enemyWaveMax: 3
+  enemyMaxActive: 60
+  enemyPerSpawn: 6
+  enemyWaveIncrease: 0
+  levelDifficulty: 1
   enemyVariety: 3
-  ignoreBelow: 10
-  enemyWaveDelay: 25
-  enemySpawnDelay: 0.1
-  gameStarted: 0
+  ignoreBelow: 49
+  enemyEscapeAllowed: 5
+  enemyWaveDelay: 4
+  enemySpawnDelay: 0.5

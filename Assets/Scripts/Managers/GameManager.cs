@@ -27,11 +27,24 @@ public class GameManager : MonoBehaviour
     [Range(1f, 10f)]
     private float gameSpeed = 1f;
     public float GameSpeed { get { return gameSpeed; } }
-    
+
+
+    //Scene count
+    private int TotalLevels = 0;
+    public int LevelCount
+    {
+        get { GetSceneCount(); return TotalLevels; }
+    }
 
     //player progress
     private int playerLastPlayedLevel = 0;//the last level player has played
     private int playerWonLevel = 0;//The highest level player has completed
+
+    private int[] levelStats;
+    public int[] LevelStats { get { return levelStats; } }
+
+    private int highestLevelAvailable = 0;
+
 
     //Generate an instance if needed. Do not allow more than one
     private void Awake()
@@ -75,6 +88,87 @@ public class GameManager : MonoBehaviour
 
     }
 
+    private void Start()
+    {
+        GetSceneCount();
+
+        
+        LoadPlayerProgress();
+
+    }
+
+    //Save a level progress in levelStats. hint: level is normal not array index. Level 1 : 1
+    public void SaveLevelProgress(int level, int star)
+    {
+        if(level <= 0 || star <= 0)
+        {
+            return;
+        }
+        if( level > TotalLevels) {  return; }
+        if( star > 3) { star = 3; }
+
+        if(levelStats.Length < level-1)
+        {
+            //index out of reach
+            Debug.LogError("Couldn't save player progress. level number is out of reach");
+            return;
+        }
+        //Check if this score is better
+        int oldScore = levelStats[(level - 1)];
+        if( star > oldScore)
+        {
+            levelStats[(level - 1)] = star; //level index is 1 less
+            //Save file
+            SavePlayerProgress();
+        }else
+        {
+            //you did a better score before
+        }
+        
+        return;
+    }
+
+    //Get 0-3 integer for a levels progress
+    public int getLevelProgress(int level)
+    {
+        if( level <= levelStats.Length && level > 0)
+        {
+            return levelStats[(level-1)];
+        }
+        return 0;
+    }
+
+    public void LoadPlayerProgress()
+    {
+        int[] loadedLevelStats = SaveSystem.LoadGameData();
+        levelStats = new int[LevelCount];
+
+        if (loadedLevelStats != null)
+        {
+            if(loadedLevelStats.Length > 0)
+            {
+                for(int i = 0; i < levelStats.Length; i++)
+                {
+                    //Does the loaded stats have this index?
+                    if( loadedLevelStats.Length > i)
+                    {
+                        levelStats[i] = loadedLevelStats[i];
+                    }
+                }
+            }
+            
+        }
+    }
+
+    public void SavePlayerProgress()
+    {
+        SaveSystem.SaveGameData(levelStats);
+    }
+
+    
+
+
+
     public float getGameTime()
     {
         return runTime;
@@ -93,5 +187,49 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene(scene.name);
     }
 
+    public void LoadNextLevel(int currentLevel)
+    {
+        if( currentLevel >= TotalLevels)
+        {
+            //Game Complete
+            SceneManager.LoadScene("Menu");
+            level = 0;
+        }else if( currentLevel < TotalLevels)
+        {
+            level = currentLevel + 1;
+            string newSceneName = "Level " + level.ToString();
+            SceneManager.LoadScene(newSceneName);
+        }else
+        {
+            //Some error
+            Debug.LogError("Scene manager error. Loading menu");
+            SceneManager.LoadScene("Menu");
+            level = 0;
+        }
+    }
+
+    public void ToggleSpeed2x()
+    {
+        if(gameSpeed == 1f)
+        {
+            gameSpeed = 2f;
+        } else if( gameSpeed == 2f)
+        {
+            gameSpeed = 1f;
+        } else
+        {
+            gameSpeed = 1f;
+        }
+    }
+
+
+    private void GetSceneCount()
+    {
+        TotalLevels = SceneManager.sceneCountInBuildSettings;
+        if( TotalLevels > 1)
+        {
+            TotalLevels -= 1; //Remove menu
+        }
+    }
 
 }

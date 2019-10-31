@@ -165,3 +165,5 @@ MonoBehaviour:
   speed: 1.5
   difficulty: 10
   health: 100
+  rewardMin: 5
+  rewardMax: 20
