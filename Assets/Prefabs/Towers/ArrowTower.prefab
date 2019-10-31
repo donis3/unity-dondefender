@@ -204,6 +204,9 @@ MonoBehaviour:
   radius: 5
   shootingSpeed: 0.5
   dmgType: 1
+  accuracy: 1
+  initialPrice: 70
+  towerLevelUps: 2
   projectile: {fileID: 4882813819560900002, guid: 205775ad804f15140afa0b46414a750c,
     type: 3}
   projectileOffset: {x: -0.2, y: 0.3}

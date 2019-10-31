@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
 public class Tower : MonoBehaviour
 {
     [Header("Tower Settings")]
@@ -26,6 +27,20 @@ public class Tower : MonoBehaviour
     [Range(1f, 10f)]
     private float accuracy = 1f;
 
+    [Header("Tower Price (Level 0)")]
+    [Space(20f)]
+    [SerializeField]
+    private int initialPrice = 0;
+
+    [Header("Tower Upgradable Levels")]
+    [SerializeField]
+    [Range(0,5)]
+    private int towerLevelUps = 0; //How many levels a tower has. If 2 => 0,1,2
+
+    //Prices per level
+    private int[] price;
+
+
     [Header("Projectile Prefab")]
     [Space(20f)]
     [SerializeField]
@@ -45,7 +60,24 @@ public class Tower : MonoBehaviour
     private float lastTargetChange = 0f; //New target picking time tracker
     private bool debug = false; //Will color the target red if enabled
 
+    private int currentTowerLevel = 0;//initial level
 
+    public int Price
+    {
+        get
+        {
+            if(currentTowerLevel == 0) { return initialPrice; }
+            if( currentTowerLevel < price.Length)
+            {
+                return price[currentTowerLevel];
+            }else
+            {
+                return 0;
+            }
+        }
+    }
+
+    
     
 
     
@@ -65,7 +97,8 @@ public class Tower : MonoBehaviour
         {
             Debug.LogError("Could not find radius visualizer object for tower");
         }
-
+        //Prepare Price for all levels
+        CalculateTowerPrices();
     }
 
 
@@ -85,6 +118,46 @@ public class Tower : MonoBehaviour
         
     }
 
+    /* =====================================| TOWER PRICE MANAGER |================================= */
+    public void CalculateTowerPrices()
+    {
+        if( towerLevelUps <= 0)
+        {
+            price = new int[1];
+            price[0] = initialPrice;
+            return;
+        }
+        if( towerLevelUps > 0)
+        {
+            price = new int[towerLevelUps + 1];
+            for(int i = 0; i < price.Length; i++)
+            {
+                //Calculate price for this level
+                price[i] = CalculateTowerPriceFor(i);
+            }
+        }
+        
+    }
+    private int CalculateTowerPriceFor(int level)
+    {
+        if( level == 0 ) { return initialPrice; }
+
+        double power = (double)level;
+        double percentage = ((double)GameSettings.TowerPricePercentageIncrementPerLevel + 100d) / 100d; //Will give something like 1.7
+        double multiplyer = Math.Pow(percentage, power);//for level index 2, it will be 1.7*1.7
+        double newPrice = (double)initialPrice * multiplyer;
+
+        //Debug.LogFormat("Level {0} | Percentage {1} | multiplyer {2} | firstPrice {3} | calculated {4}", level, percentage, multiplyer, initialPrice, newPrice);
+
+        //calc the remainder for 5 so price is always 5 and its factors
+        double remainder = newPrice % (double)5;
+        newPrice -= remainder;
+
+
+        return (int)Math.Round(newPrice);
+    }
+
+    
     /* =====================================| TOWER OBJECT SELECTABLE |================================= */
 
     //SELECT TOWER (Show Radius)
@@ -225,9 +298,9 @@ public class Tower : MonoBehaviour
         while(true)
         {
             //Game Paused
-            if(FindObjectOfType<EnemyManager>().gameStarted == false)
+            if(LevelManager.instance.GamePaused == true)
             {
-                yield return new WaitUntil(() => FindObjectOfType<EnemyManager>().gameStarted == true);
+                yield return new WaitUntil(() => LevelManager.instance.GamePaused == false);
             }
             //Game Running
             yield return new WaitForSeconds(0.1f);
@@ -267,9 +340,9 @@ public class Tower : MonoBehaviour
         while(true)
         {
             //Game Paused
-            if (FindObjectOfType<EnemyManager>().gameStarted == false)
+            if (LevelManager.instance.GamePaused == true)
             {
-                yield return new WaitUntil(() => FindObjectOfType<EnemyManager>().gameStarted == true);
+                yield return new WaitUntil(() => LevelManager.instance.GamePaused == false);
             }
 
             if (targetEnemy != null)
@@ -323,9 +396,9 @@ public class Tower : MonoBehaviour
         while (target != null && projectile != null) {
 
             //Game Paused
-            if (FindObjectOfType<EnemyManager>().gameStarted == false)
+            if (LevelManager.instance.GamePaused == true)
             {
-                yield return new WaitUntil(() => FindObjectOfType<EnemyManager>().gameStarted == true);
+                yield return new WaitUntil(() => LevelManager.instance.GamePaused == false);
             }
             lastMovement += Time.deltaTime;
             if( lastMovement < step)
@@ -381,13 +454,13 @@ public class Tower : MonoBehaviour
         while( true )
         {
             //Game Paused
-            if (FindObjectOfType<EnemyManager>().gameStarted == false)
+            if (LevelManager.instance.GamePaused == true)
             {
-                yield return new WaitUntil(() => FindObjectOfType<EnemyManager>().gameStarted == true);
+                yield return new WaitUntil(() => LevelManager.instance.GamePaused == false);
             }
 
             //Stop if no target
-            if(targetEnemy == null)
+            if (targetEnemy == null)
             {
                 yield return new WaitUntil(() => targetEnemy != null);
             }

@@ -162,6 +162,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba064625616a5164ab51ea0aaddd71ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 0.64
+  speed: 0.8
   difficulty: 1
   health: 50

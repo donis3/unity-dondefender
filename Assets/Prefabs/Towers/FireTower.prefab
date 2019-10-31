@@ -179,9 +179,10 @@ MonoBehaviour:
   shootingSpeed: 1
   dmgType: 2
   accuracy: 10
+  initialPrice: 120
+  towerLevelUps: 2
   projectile: {fileID: 2159753616555019475, guid: 8cb57d458e778a045aa065d4def53fc3,
     type: 3}
-  targetEnemy: {fileID: 0}
   projectileOffset: {x: -0.05, y: 0.35}
 --- !u!61 &1014197414
 BoxCollider2D:

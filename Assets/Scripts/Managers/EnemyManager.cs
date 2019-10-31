@@ -12,6 +12,8 @@ using System.Linq;
  */
 public class EnemyManager : MonoBehaviour
 {
+    public static EnemyManager instance { get; private set; } //Instantiate once per level
+
     //Game Objects (Bind required prefabs here on unity gui)
     [Header("Spawn Point Prefab")]
     [SerializeField] private GameObject objSpawn;
@@ -43,6 +45,9 @@ public class EnemyManager : MonoBehaviour
     [Tooltip("Spawn chances below this number will be ignored")]
     [Range(0f,49f)] [SerializeField] private float ignoreBelow = 10f;
 
+    [Tooltip("Allowed enemy escapes before gameover")]
+    [Range(0, 1000)] [SerializeField] private int enemyEscapeAllowed = 20; //game over if 20+ escapes
+
     [Header("Wave Timer")]
     [Space(20)]
     [Tooltip("Wait time in seconds between enemy waves")]
@@ -59,10 +64,13 @@ public class EnemyManager : MonoBehaviour
     private int enemyActiveCount = 0; //Keep track of how many enemies are alive at this time
     
     private int enemyMax = 0; //Calculate total enemies that will be spawned throughout the level
-    private int currentWave = 1; //Will start from 1 to enemyWaveMax
+    private int currentWave = 0; //Will start from 1 to enemyWaveMax
+    
 
     //Active enemies list
     private List<Enemy> enemies = new List<Enemy>();
+
+    private List<Enemy> deadEnemies = new List<Enemy>();//Keep dead enemies for a while
     public List<Enemy> Enemies
     {
         get { return enemies; }
@@ -77,21 +85,22 @@ public class EnemyManager : MonoBehaviour
     public int TotalWaves { get { return enemyWaveMax; } }
     public int TotalEscaped { get { return enemyEscapedCounter; } }
     public int TotalKilled { get { return enemyKilledCounter; } }
+    public int EnemyEscapeAllowed { get { return enemyEscapeAllowed; } }
+
+
+
+    private bool lastWaveSpawned = false;
     
-
-
-    //Game state toggle
-    [Header("Game state toggle (Play/Pause)")]
-    [Space(20)]
-    [Tooltip("Game is paused/active toggle")]
-    public bool gameStarted = false; //toggle for game runtime
-    
-
-    private bool levelFinished = false;
     private int enemyKilledCounter = 0;
     private int enemyEscapedCounter = 0;
-    
 
+    private bool waveManagerRunning = false;
+    private int lastCompletelySpawnedWave = -1;
+    public bool WaveManagerRunning { get { return waveManagerRunning; } }
+    public int LastCompletelySpawnedWave { get { return lastCompletelySpawnedWave; } }
+
+    private bool gameLost = false;
+    public bool GameLost { get { return gameLost; } }
     
 
     /** Awake : Dependency Control
@@ -99,7 +108,15 @@ public class EnemyManager : MonoBehaviour
      */
     private void Awake()
     {
-        
+        if (instance == null)
+        {
+            instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+
         Assert.IsNotNull(objSpawn, "Spawn point game object");
         Assert.IsTrue(objEnemies.Length > 0, "Enemies object array");
 
@@ -144,11 +161,11 @@ public class EnemyManager : MonoBehaviour
             enemyWaveDelay = (enemySpawnDelay * (float)CalculateWaveSize(enemyWaveMax - 1)) + 1f;
         }
 
-        //Time scale
-        Time.timeScale = 1;
-
         //min spawn delay
         if (enemySpawnDelay < 0.1f) { enemySpawnDelay = 0.1f; } //Min spawn delay
+
+        //Change game state
+
 
     }
 
@@ -165,25 +182,9 @@ public class EnemyManager : MonoBehaviour
     }
     private void Update()
     {
-        GameStateEngine();
         
         
-    }
-
-    /**
-     * Handle Game runtime
-     */
-    private void GameStateEngine()
-    {
-        if( gameStarted )
-        {
-            Time.timeScale = 1;
-        } else
-        {
-            Time.timeScale = 0;
-        }
-            
-
+        
     }
 
 
@@ -244,15 +245,43 @@ public class EnemyManager : MonoBehaviour
     IEnumerator WaveManager()
     {
         
-        while(levelFinished == false )
+        while(lastWaveSpawned == false && gameLost == false)
         {
+            waveManagerRunning = true;
+
             //Paused State
-            if (!gameStarted)
+            if (LevelManager.instance.GamePaused == true)
             {
-                yield return new WaitUntil(() => gameStarted == true);
+                yield return new WaitUntil(() => LevelManager.instance.GamePaused == false);
+            }
+
+            //Waves Paused
+            if(LevelManager.instance.WavesPaused == true)
+            {
+                yield return new WaitUntil(() => LevelManager.instance.WavesPaused == false);
+            }
+
+            //End Game
+            if (currentWave > enemyWaveMax)
+            {
+                lastWaveSpawned = true;
+                waveManagerRunning = false;
+                Debug.Log("Last wave have spawned. Stopping enemy manager");
+                yield break;
+            }
+
+            //Remove corpses before new wave
+            if(deadEnemies.Count > 0 )
+            {
+                for(int i = 0; i < deadEnemies.Count; i++)
+                {
+                    Destroy(deadEnemies[i].gameObject);
+                }
+                deadEnemies.Clear();
             }
 
             //Wave Delay 
+            LevelManager.instance.Feedback("Enemies are coming in " + Math.Round((double)enemyWaveDelay) + " seconds..");
             yield return new WaitForSeconds(enemyWaveDelay);
 
             int currentWaveSize = CalculateWaveSize(currentWave);
@@ -273,6 +302,7 @@ public class EnemyManager : MonoBehaviour
                 if (waveComposition.Length == 0) {
                     //Could not calculate wave composition
                     Debug.LogError("Wave no " + currentWave + " did not yield any spawns. Exiting Coroutine");
+                    waveManagerRunning = false;
                     yield break;
                 }
 
@@ -295,15 +325,14 @@ public class EnemyManager : MonoBehaviour
                         }//Eol enemy spawn amount
                     }
                 }//Eol enemy types
-                currentWave++;
 
-                //End Game
-                if( currentWave > enemyWaveMax)
-                {
-                    levelFinished = true;
-                    Debug.Log("GAME STATE CHANGE: Level finished. Stopping waves");
-                    yield break;
-                }
+
+                
+
+                //Pause waves if we still havent finished
+                LevelManager.instance.PauseWaves(); //Pause waves and wait for next wave
+
+                
 
                 /* ====================================================== */
 
@@ -313,13 +342,18 @@ public class EnemyManager : MonoBehaviour
                 Debug.Log("@WaveManager Scene was filled, waiting for next iteration");
             }
 
+            waveManagerRunning = false;
+            lastCompletelySpawnedWave = currentWave;
         } //EOL while coroutine true
     }
 
 
 
 
-
+    public void IncrementWave()
+    {
+        currentWave++;
+    }
 
     /**
      * Calculate enemy size of a wave
@@ -362,6 +396,32 @@ public class EnemyManager : MonoBehaviour
     }
 
 
+    //Level Finished
+    public void GameEnded()
+    {
+        Debug.Log("You won");
+        
+    }
+
+    public void Lose()
+    {
+        Debug.Log("You've Lost");
+        StopCoroutine("WaveManager");
+        gameLost = true;
+    }
+
+    public void killEnemy(GameObject enemy)
+    {
+        deadEnemies.Add(enemy.GetComponent<Enemy>());
+        Enemies.Remove(enemy.GetComponent<Enemy>());
+        if (enemyActiveCount > 0)
+        {
+            enemyActiveCount--;
+            enemyKilledCounter++;
+        }
+        
+    }
+
     /**
      * Remove a single enemy object from the scene
      * Called when enemy escapes
@@ -375,6 +435,13 @@ public class EnemyManager : MonoBehaviour
         if (enemyActiveCount > 0)
         {
             enemyActiveCount--;
+        }
+        
+
+        if( TotalEscaped >= enemyEscapeAllowed)
+        {
+            Lose();
+            return;
         }
         enemyEscapedCounter++;
     }

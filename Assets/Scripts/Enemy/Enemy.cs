@@ -123,6 +123,11 @@ public class Enemy : MonoBehaviour
     {
         //Check death
         if (isDead) { return; }
+        if( EnemyManager.instance.GameLost == true )
+        {
+            anim.enabled = false; //Stop animation when game is lost
+            return;
+        }
 
         //Check waypoints
         if (waypoints.Length == 0) { return; }
@@ -207,7 +212,7 @@ public class Enemy : MonoBehaviour
     /*====================================| ENEMY DAMAGE |====================================*/
     private void takeDamage(int damage)
     {
-        if( damage > 0)
+        if( damage > 0 && isDead == false)
         {
             if( damage <= health)
             {
@@ -220,6 +225,7 @@ public class Enemy : MonoBehaviour
                 //Death animation
                 anim.Play("Death");
                 Die();
+                EnemyManager.instance.killEnemy(gameObject);
             }
         }
         //Debug.Log("Im hit. My hp is: " + health);

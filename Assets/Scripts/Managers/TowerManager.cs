@@ -5,6 +5,8 @@ using System.Collections.Generic;
 
 public class TowerManager : MonoBehaviour
 {
+    public static TowerManager instance { get; private set; }
+
     private TowerBtn[] towerButtons;
     private TowerBtn towerBtnPressed;
     private bool towerSelected = false;
@@ -20,6 +22,7 @@ public class TowerManager : MonoBehaviour
     private bool mouseFollowActive = false; //Disable other operations while placing tower
     private float lastTowerPlaced;
     
+    
 
     
     
@@ -29,6 +32,16 @@ public class TowerManager : MonoBehaviour
 
     private void Awake()
     {
+        //Instantiate singleton(for level)
+        if (instance == null)
+        {
+            instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+
         //Get Button Objects
         towerButtons = FindObjectsOfType<TowerBtn>();
         spriteRenderer = GetComponent<SpriteRenderer>();
@@ -104,6 +117,8 @@ public class TowerManager : MonoBehaviour
         }
         else
         {
+            //Check Price
+
             //Select new object and highlight
             towerBtnPressed = btn;
             btn.GetComponent<Outline>().enabled = true;
@@ -188,10 +203,7 @@ public class TowerManager : MonoBehaviour
             }
         }
 
-        if (Input.GetKeyDown(KeyCode.W))
-        {
-            PlaceTower(worldPoint);
-        }
+        
     }
 
     //Visualize the tower at cursor

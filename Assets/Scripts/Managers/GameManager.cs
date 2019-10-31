@@ -13,9 +13,25 @@ public class GameManager : MonoBehaviour
     public static GameManager instance { get; private set; }
 
     //Time Tracking
+    private float startTime = 0f; //internal tracker
+    private float runTime = 0f; //Keep track of game runtime
 
-    private float startTime = 0f;
-    private float runTime = 0f;
+    //Game State
+    public gameState State = gameState.menu;
+
+    //level state
+    private int level = 0;
+    public int Level { get { return level; } }
+
+    [SerializeField]
+    [Range(1f, 10f)]
+    private float gameSpeed = 1f;
+    public float GameSpeed { get { return gameSpeed; } }
+    
+
+    //player progress
+    private int playerLastPlayedLevel = 0;//the last level player has played
+    private int playerWonLevel = 0;//The highest level player has completed
 
     //Generate an instance if needed. Do not allow more than one
     private void Awake()
@@ -45,8 +61,14 @@ public class GameManager : MonoBehaviour
         }
         if (Input.GetKeyDown("2"))
         {
-            SceneManager.LoadScene("Game");
+            SceneManager.LoadScene("Level");
             
+        }
+
+        //speed
+        if( Time.timeScale != gameSpeed && State != gameState.pause)
+        {
+            Time.timeScale = gameSpeed;
         }
 
         
@@ -57,5 +79,19 @@ public class GameManager : MonoBehaviour
     {
         return runTime;
     }
+
+
+
+    public void QuitLevel()
+    {
+        SceneManager.LoadScene("Menu");
+    }
+
+    public void RestartLevel()
+    {
+        Scene scene = SceneManager.GetActiveScene();
+        SceneManager.LoadScene(scene.name);
+    }
+
 
 }
