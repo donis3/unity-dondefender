@@ -56,7 +56,7 @@ public class EnemyManager : MonoBehaviour
 
     [Tooltip("Wait time in seconds between each enemy during a single wave")]
     [Range(0.1f, 5f)]
-    [SerializeField] private float enemySpawnDelay = 0.1f;
+    [SerializeField] private float enemySpawnDelay = 0.05f;
 
 
     //Internal Vars
@@ -101,7 +101,9 @@ public class EnemyManager : MonoBehaviour
 
     private bool gameLost = false;
     public bool GameLost { get { return gameLost; } }
-    
+
+
+    private int bonusHp = 0;
 
     /** Awake : Dependency Control
      * Do assertions for game objects 
@@ -154,12 +156,6 @@ public class EnemyManager : MonoBehaviour
             enemySpawnDelay = 0.1f;
         }
 
-        //Calculate minimum delay
-        if( enemyWaveMax > 1 &&  enemySpawnDelay*(float)CalculateWaveSize(enemyWaveMax-1) > enemyWaveDelay)
-        {
-            Debug.LogError("Wave timer was not enough to compensate max needed spawn time. Fixin...");
-            enemyWaveDelay = (enemySpawnDelay * (float)CalculateWaveSize(enemyWaveMax - 1)) + 1f;
-        }
 
         //min spawn delay
         if (enemySpawnDelay < 0.1f) { enemySpawnDelay = 0.1f; } //Min spawn delay
@@ -172,13 +168,14 @@ public class EnemyManager : MonoBehaviour
 
     private void Start()
     {
+        EnemyHealthCalculatorForLevel();
 
         StartCoroutine("WaveManager");
-        
-        
-        
 
-        
+
+
+
+
     }
     private void Update()
     {
@@ -187,7 +184,25 @@ public class EnemyManager : MonoBehaviour
         
     }
 
+    //Bonus hp for enemies. Increased with level and difficulty. Each wave, huge hp increase
+    private void EnemyHealthCalculatorForLevel()
+    {
+        
+         bonusHp = (int)Math.Round((float)LevelManager.instance.Level * Rhinotap.Tools.RandomFloat(0.1f, 0.5f) * levelDifficulty);
 
+        //include wave
+        float waveDifficulty = CalculateWaveDifficulty(currentWave);
+        if( waveDifficulty <= 0f) { waveDifficulty = 0.1f; }
+
+        bonusHp += (int)Math.Round(waveDifficulty * GameSettings.WaveHpIncrementMultiplier);
+        
+        //Multiply by level if level is 1, do *1, if level is 10, do 1.05 if 
+        float levelMultiplier = (float)(LevelManager.instance.Level+10) / 20f; //100 -> 5 10-> 0.5
+        bonusHp = (int)Math.Round((float)bonusHp * (1f+levelMultiplier));
+
+        
+        
+    }
 
     /** Wave Composition // RETURN int[] (enemyIndex => How many to spawn)
      * Create a wave composition considering
@@ -323,7 +338,7 @@ public class EnemyManager : MonoBehaviour
                             
                             spawnEnemy(i);
                             
-                            yield return new WaitForSeconds(enemySpawnDelay); //Wait for given delay
+                            yield return new WaitForSeconds(enemySpawnDelay + Rhinotap.Tools.RandomFloat(0.1f,0.4f)); //Wait for given delay
 
                         }//Eol enemy spawn amount
                     }
@@ -350,11 +365,16 @@ public class EnemyManager : MonoBehaviour
         } //EOL while coroutine true
     }
 
-
+    private float CalculateWaveDifficulty(int waveNo)
+    {
+        float waveDifficulty = levelDifficulty * ((float)waveNo / enemyWaveMax);
+        return waveDifficulty;
+    }
 
 
     public void IncrementWave()
     {
+        EnemyHealthCalculatorForLevel();
         currentWave++;
     }
 
@@ -389,7 +409,13 @@ public class EnemyManager : MonoBehaviour
 
         //Instantiate an enemy prefab from enemies array as a gameobject 
         GameObject enemy = Instantiate(objEnemies[enemyIndex]) as GameObject;
-        Enemies.Add(enemy.GetComponent<Enemy>());
+        Enemy enemyComponent = enemy.GetComponent<Enemy>();
+        
+        
+        enemyComponent.health += bonusHp;
+
+
+        Enemies.Add(enemyComponent);
 
         enemy.transform.position = objSpawn.transform.position; //Move it to spawner
 
@@ -402,7 +428,7 @@ public class EnemyManager : MonoBehaviour
     //Level Finished
     public void GameEnded()
     {
-        Debug.Log("You won");
+        //Debug.Log("You won");
         
     }
 
@@ -413,6 +439,7 @@ public class EnemyManager : MonoBehaviour
         gameLost = true;
     }
 
+    private int lastDeadEnemySort = -20;
     public void killEnemy(GameObject enemy)
     {
         deadEnemies.Add(enemy.GetComponent<Enemy>());
@@ -421,11 +448,25 @@ public class EnemyManager : MonoBehaviour
         //Gain money
         enemy.GetComponent<Enemy>().rewardMoney();
 
+        //Dead enemy sorting order between -20 and -1. Oldear dead ones will be further behind
+        lastDeadEnemySort++;
+        if( lastDeadEnemySort >= -1)
+        {
+            lastDeadEnemySort = -20;
+        }
+        enemy.GetComponent<SpriteRenderer>().sortingOrder = lastDeadEnemySort;
+
         if (enemyActiveCount > 0)
         {
             enemyActiveCount--;
             enemyKilledCounter++;
         }
+        //Get location
+        Vector2 originalPos = enemy.transform.localPosition;
+        enemy.transform.localPosition = new Vector2(
+            originalPos.x + Rhinotap.Tools.RandomFloat(0.01f, 0.1f),
+            originalPos.y + Rhinotap.Tools.RandomFloat(0.01f, 0.1f)
+            );
         
     }
 

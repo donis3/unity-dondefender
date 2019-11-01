@@ -6,8 +6,12 @@ using UnityEngine;
 
 public class Tower : MonoBehaviour
 {
-    [Header("Tower Settings")]
+    [Header("Tower Name")]
+    [SerializeField]
+    private string towerName = "Unknown Tower";
 
+    [Header("Tower Settings")]
+    [Space(20)]
     [SerializeField]
     [Tooltip("The distance from which the tower can shoot")]
     [Range(0.1f, 10f)]
@@ -62,6 +66,9 @@ public class Tower : MonoBehaviour
 
     private int currentTowerLevel = 0;//initial level
 
+
+    private BuildSite thisTowersBuildSite;
+
     public int Price
     {
         get
@@ -77,34 +84,67 @@ public class Tower : MonoBehaviour
         }
     }
 
+    private float projectileBonusMultiplier = 1f;
     
-    
+    //Getters
 
+    //Tower Level as string
+    public string TowerLevel { get { return "LVL " + (currentTowerLevel+1).ToString(); } }
+
+    //Upgrade price. Will return 0 if unavailable
+    public int UpgradePrice
+    {
+        get
+        {
+            if(currentTowerLevel < price.Length-1)
+            {
+                //Upgrade Available
+                return price[currentTowerLevel + 1];
+            }else
+            {
+                return 0;
+            }
+        }
+    }
+    //Tower name string
+    public string TowerName { get { return towerName; } }
     
+    //Sell Price
+    public int SellPrice
+    {
+        get
+        {
+            int totalSpent = 0;
+            if( currentTowerLevel == 0)
+            {
+                totalSpent += initialPrice;
+            }
+            else
+            {
+                for(int i = 0; i <= currentTowerLevel; i++)
+                {
+                    totalSpent += price[i];
+                }
+            }
+            if( totalSpent <= 0 ) { return 0; }
+
+            return (int)Math.Round(((float)totalSpent * (float)GameSettings.TowerSellRefundPercentage) / 100f);
+        }
+    }
 
     private void Awake()
     {
-        //Find radius visualizer object under prefab
-        Transform children = transform.Find("radius"); //Finds child
-        if (children != null)
-        {
-            radiusObj = children.gameObject;
-            //Find the size of radius sprite and calculate scale to match tower radius
-            Bounds  Bounds = radiusObj.GetComponent<SpriteRenderer>().sprite.bounds;
-            radiusObj.transform.localScale = (Vector2.one*2*radius) / Bounds.size;
-        }
-        else
-        {
-            Debug.LogError("Could not find radius visualizer object for tower");
-        }
+        RadiusUpdater();
         //Prepare Price for all levels
         CalculateTowerPrices();
     }
 
+    
+
 
     private void Start()
     {
-        
+        FindBuildSite();
 
         //Tower starts scanning. (Will pause if enemy manager.isplaying false)
         StartCoroutine("ScanEnemies");
@@ -116,6 +156,36 @@ public class Tower : MonoBehaviour
     private void Update()
     {
         
+    }
+
+    //Find the buildsite object for this tower
+    private void FindBuildSite()
+    {
+        BuildSite[] buildSites = FindObjectsOfType<BuildSite>();
+        for (int i = 0; i < buildSites.Length; i++)
+        {
+            if (buildSites[i].Tower == gameObject)
+            {
+                thisTowersBuildSite = buildSites[i];
+            }
+        }
+    }
+
+    private void RadiusUpdater()
+    {
+        //Find radius visualizer object under prefab
+        Transform children = transform.Find("radius"); //Finds child
+        if (children != null)
+        {
+            radiusObj = children.gameObject;
+            //Find the size of radius sprite and calculate scale to match tower radius
+            Bounds Bounds = radiusObj.GetComponent<SpriteRenderer>().sprite.bounds;
+            radiusObj.transform.localScale = (Vector2.one * 2 * radius) / Bounds.size;
+        }
+        else
+        {
+            Debug.LogError("Could not find radius visualizer object for tower");
+        }
     }
 
     /* =====================================| TOWER PRICE MANAGER |================================= */
@@ -167,7 +237,9 @@ public class Tower : MonoBehaviour
         //Debug.Log("Selecting Tower");
         if(radiusObj == null) { return; }
         radiusObj.SetActive(true);
-        
+
+        //Show Menu
+        LevelManager.instance.ShowTowerMenu(transform.position, this);
         
     }
 
@@ -177,6 +249,7 @@ public class Tower : MonoBehaviour
         //Debug.Log("De-Selecting Tower");
         if (radiusObj == null) { return; }
         radiusObj.SetActive(false);
+        LevelManager.instance.HideTowerMenu();
     }
 
 
@@ -372,8 +445,9 @@ public class Tower : MonoBehaviour
 
         //Instantiate projectile
         Projectiles newProjectile = GameObject.Instantiate(projectile);
+        
         newProjectile.transform.position = new Vector2(transform.localPosition.x + projectileOffset.x, transform.localPosition.y + projectileOffset.y);
-
+        newProjectile.multiplyDamage(projectileBonusMultiplier);
         StartCoroutine(MoveProjectile(newProjectile, targetEnemy));
         
 
@@ -384,7 +458,7 @@ public class Tower : MonoBehaviour
         //Debug.Log("Moving a projectile towards enemy...");
 
         //Distance Tracker (Accuracy)
-        float maxDistance = 0.5f / accuracy; //if accuracy is 1, arrows will stop at 0.5f // If accuracy is 10, it will go to 0.05f
+        float maxDistance = 1f / accuracy; //if accuracy is 1, arrows will stop at 0.5f // If accuracy is 10, it will go to 0.05f
         float minDistance = 0.01f;
         //Randomize accuracy
         float randomStoppingDistance = Rhinotap.Tools.RandomFloat(minDistance, maxDistance);
@@ -418,6 +492,8 @@ public class Tower : MonoBehaviour
                 yield return new WaitForSeconds(0.1f);
                 if(projectile != null && projectile.gameObject != null)
                 {
+                    //Missed the target. Remove manually
+                    Debug.Log("miss");
                     projectile.Remove();
                 }
                 yield break; //Reached Target
@@ -473,6 +549,53 @@ public class Tower : MonoBehaviour
         }
     }
 
+
+
+
+    /* =====================================| Tower Upgrade & Sell |========================= */
+
+    public void UpgradeTower()
+    {
+        //Increase its level diyelim 2 level up var (0,1,2) tower levelimiz de 1
+        if( UpgradePrice <= 0 )
+        {
+            //Upgrade is not available
+            Debug.Log("Upgrade is not available");
+            return;
+        }
+        LevelManager.instance.SpendMoney(UpgradePrice);
+
+        currentTowerLevel += 1;
+        LevelManager.instance.HideTowerMenu();
+        //Change sprite here
+        //thisTowersBuildSite.GetComponent<SpriteRenderer>().color = new Color(1f, 0f, 0f);
+
+        //Increase projectile Damage
+
+        projectileBonusMultiplier += 0.2f; //%20 increase per upgrade
+        
+        
+
+        //increase radius
+        radius *= 1.2f;
+        if( accuracy < 10) { accuracy++; }
+
+        RadiusUpdater();
+        
+    }
+
+    public void SellTower()
+    {
+        
+        if( SellPrice > 0)
+        {
+            LevelManager.instance.GetMoney(SellPrice);
+        }
+
+        thisTowersBuildSite.RemoveTower();
+        LevelManager.instance.HideTowerMenu();
+
+    }
 
 
 }

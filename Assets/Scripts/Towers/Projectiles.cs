@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using System.Collections;
 public enum projectileType
 {
@@ -48,6 +49,12 @@ public class Projectiles : MonoBehaviour
         {
             StartCoroutine("RemoveProjectile");
         }
+    }
+
+    public void multiplyDamage(float multiplier)
+    {
+        damage = (int)Math.Round(multiplier * (float)damage);
+        if(damage < 10) { damage = 10; }
     }
 
     IEnumerator RemoveProjectile()

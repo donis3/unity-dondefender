@@ -175,10 +175,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a3de426dadc74b94681f7720841ffd82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  towerName: Rock Tower
   radius: 3
-  shootingSpeed: 1.5
+  shootingSpeed: 1.2
   dmgType: 0
-  accuracy: 3
+  accuracy: 2
   initialPrice: 20
   towerLevelUps: 3
   projectile: {fileID: -8011996959045674749, guid: 070811d6d6a280d4ab9a42ad45278293,

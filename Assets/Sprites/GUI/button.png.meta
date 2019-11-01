@@ -50,6 +50,12 @@ TextureImporter:
   - first:
       213: -8445939435616580311
     second: btnCheckGray
+  - first:
+      213: -8369332720786833813
+    second: btnTrashGray
+  - first:
+      213: -8973909099291474952
+    second: btnUpGray
   externalObjects: {}
   serializedVersion: 10
   mipmaps:
@@ -493,7 +499,7 @@ TextureImporter:
         width: 285
         height: 286
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -501,6 +507,48 @@ TextureImporter:
       bones: []
       spriteID: 5d2060ebdd0dac74eb1824d79ea3e759
       internalID: -8445939435616580311
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: btnTrashGray
+      rect:
+        serializedVersion: 2
+        x: 2525
+        y: 5164
+        width: 282
+        height: 285
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 75d00f254351afa419f6d5973bb12f3c
+      internalID: -8369332720786833813
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: btnUpGray
+      rect:
+        serializedVersion: 2
+        x: 1029
+        y: 3609
+        width: 282
+        height: 284
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7dc36c1134e1fb945bfcd2f1bfe0500b
+      internalID: -8973909099291474952
       vertices: []
       indices: 
       edges: []

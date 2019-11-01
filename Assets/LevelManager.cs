@@ -32,6 +32,7 @@ public class LevelManager : MonoBehaviour
     private int levelStars = 0;// 0 means not completed. 
 
 
+
     /*==============|Tools|=============*/
     public System.Random random = new System.Random();
 
@@ -71,6 +72,17 @@ public class LevelManager : MonoBehaviour
     private Button btnNextLevel;
     private GameObject lvlCompleteTxt;
     private GameObject[] winStars;
+
+
+    //Tower Menu
+    private RectTransform towerMenuTransform;
+    private CanvasGroup towerMenu;
+    private Text towerNameTxt;
+    private Text towerLvlTxt;
+    private Button towerUpgradeBtn;
+    private Text towerUpgradeBtnTxt;
+    private Button towerSellBtn;
+    private Text towerSellBtnTxt;
 
     //Auto Wave Toggle
     private Button autoWave;
@@ -185,6 +197,24 @@ public class LevelManager : MonoBehaviour
         //Print allowed escape
         uiMaxEscaped.GetComponent<Text>().text = EnemyManager.instance.EnemyEscapeAllowed.ToString();
         uiCurrentEscaped.GetComponent<Text>().text = "0";
+
+
+        //Get tower menu objects
+        towerMenu = GameObject.Find("towerMenu").GetComponent<CanvasGroup>();
+        towerMenuTransform = towerMenu.GetComponent<RectTransform>();
+        towerNameTxt = towerMenu.transform.Find("towerNameTxt").gameObject.GetComponent<Text>();
+        towerLvlTxt = towerMenu.transform.Find("towerLvlTxt").gameObject.GetComponent<Text>();
+        towerUpgradeBtn = towerMenu.transform.Find("towerMenuBtnGrp/towerUpgradeBtn").gameObject.GetComponent<Button>();
+        towerUpgradeBtnTxt = towerUpgradeBtn.transform.GetComponentInChildren<Text>();
+        towerSellBtn = towerMenu.transform.Find("towerMenuBtnGrp/towerSellBtn").gameObject.GetComponent<Button>();
+        towerSellBtnTxt = towerSellBtn.transform.GetComponentInChildren<Text>();
+        
+        //initial menu state
+        towerMenu.alpha = 0f;
+        towerMenu.blocksRaycasts = false;
+        towerMenu.interactable = false;
+
+
 
         //Add money
         AddStartingMoney();
@@ -473,9 +503,19 @@ public class LevelManager : MonoBehaviour
     /*|==========================| Money Management ===========================| */
     public void GetMoney(int amount)
     {
+        //Include level multiplyer
+        float levelMultiplier = 1f;
+        if( level > 0)
+        {
+            levelMultiplier = 1f + ((float)level / 30f); //after 30th level money gain will be nearly 2x
+        }
         if( amount <= GameSettings.MaxMoneyIncrement)
         {
-            money += Math.Abs(amount);
+            Debug.Log("Get money: " + amount);
+            amount = Math.Abs(amount);
+            amount = (int)Math.Round((float)amount * levelMultiplier);
+            Debug.Log("Multiplied money: " + amount);
+            money += amount;
             totalMoneyGain += Math.Abs(amount);
         }
     }
@@ -612,6 +652,84 @@ public class LevelManager : MonoBehaviour
             }
 
         }
+    }
+
+
+    /*|==========================| Tower Management |===========================| */
+    private bool towerMenuActive = false;
+    public void HideTowerMenu()
+    {
+        towerMenuActive = false;
+        //Remove Listeners
+        towerUpgradeBtn.onClick.RemoveAllListeners();
+        towerSellBtn.onClick.RemoveAllListeners();
+
+
+        towerMenu.alpha = 0f;
+        towerMenu.interactable = false;
+        towerMenu.blocksRaycasts = false;
+        towerMenuTransform.position = Vector2.zero;
+    }
+
+    public void ShowTowerMenu(Vector2 moveTo, Tower tower)
+    {
+        if(towerMenuActive == true) { return; }
+        towerMenuActive = true;
+
+        
+        towerMenu.alpha = 1f;
+        towerMenu.interactable = true;
+        towerMenu.blocksRaycasts = true;
+
+        //moveTo.x += 0.5f;
+        moveTo.y -= 0.9f;
+
+        Vector2 towerPosition = Camera.main.WorldToScreenPoint(moveTo);
+        
+        towerMenuTransform.position = towerPosition;
+
+        //Update Tower Menu Labels
+        towerNameTxt.text = tower.TowerName;
+        towerLvlTxt.text = tower.TowerLevel;
+        
+        //Upgrade Button
+        if( tower.UpgradePrice > 0)
+        {
+            towerUpgradeBtn.gameObject.SetActive(true);
+            towerUpgradeBtnTxt.text = tower.UpgradePrice.ToString();
+            if ( tower.UpgradePrice > money)
+            {
+                towerUpgradeBtn.enabled = false;
+                //Cant Afford
+                towerUpgradeBtnTxt.color = new Color(1f, 0.2f, 0.2f);
+            } else
+            {
+                towerUpgradeBtn.enabled = true;
+                towerUpgradeBtnTxt.color = new Color(1f, 1f, 1f);
+                towerUpgradeBtn.onClick.AddListener(tower.UpgradeTower);
+            }
+            
+            
+            
+        } else
+        {
+            towerUpgradeBtnTxt.text = "0";
+            towerUpgradeBtn.gameObject.SetActive(false);
+        }
+
+        //Sell Button
+        if(tower.SellPrice > 0)
+        {
+            towerSellBtn.gameObject.SetActive(true);
+            towerSellBtnTxt.text = tower.SellPrice.ToString();
+            towerSellBtn.onClick.AddListener(tower.SellTower);
+        } else
+        {
+            towerSellBtnTxt.text = "0";
+            towerSellBtn.gameObject.SetActive(false);
+        }
+
+
     }
 
 

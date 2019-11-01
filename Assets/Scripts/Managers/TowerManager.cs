@@ -18,6 +18,7 @@ public class TowerManager : MonoBehaviour
 
     private GameObject selectedTowerObject;
     private int towerLayerIndex;
+    private int uiLayerIndex = 5;
     private int buildSiteLayerIndex;
     private bool mouseFollowActive = false; //Disable other operations while placing tower
     private float lastTowerPlaced;
@@ -73,6 +74,7 @@ public class TowerManager : MonoBehaviour
 
         //Tower layer for selecting tower
         towerLayerIndex = LayerMask.NameToLayer("TowerObjects");
+        uiLayerIndex = LayerMask.NameToLayer("UI");
         buildSiteLayerIndex = LayerMask.NameToLayer("Ground");
 
     }
@@ -114,6 +116,7 @@ public class TowerManager : MonoBehaviour
         {
             //Same button is pressed. Cancel
             towerBtnPressed = null;
+            UnselectTower();
         }
         else
         {
@@ -145,7 +148,10 @@ public class TowerManager : MonoBehaviour
     public void UnselectTower()
     {
         towerSelected = false;
-        towerBtnPressed.GetComponent<Outline>().enabled = false;
+        if( towerBtnPressed != null)
+        {
+            towerBtnPressed.GetComponent<Outline>().enabled = false;
+        }
         towerBtnPressed = null;
         towerSprite = null;
     }
@@ -267,22 +273,26 @@ public class TowerManager : MonoBehaviour
 
     private void TowerObjectSelectController()
     {
+        
         if( mouseFollowActive == true ) { return; }
 
         //Wait before selecting if a tower was just placed
-        if(Time.time - lastTowerPlaced < 1f)
+        if(Time.time - lastTowerPlaced < 0.1f)
         {
             return;
         }
 
 
         Vector2 worldPoint;
+        Vector2 screenPoint;
         if (Input.touchSupported == true && Input.touchCount > 0)
         {
+            screenPoint = Input.GetTouch(0).position;
             worldPoint = Camera.main.ScreenToWorldPoint(Input.GetTouch(0).position);
             
         } else if( Input.GetMouseButtonDown(0) )
         {
+            screenPoint = Input.mousePosition;
             worldPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             
 
@@ -291,8 +301,19 @@ public class TowerManager : MonoBehaviour
             //No input
             return;
         }
+        //Check tower menu hit
+        RectTransform towermenu = GameObject.Find("towerMenu").GetComponent<RectTransform>();
+        if(RectTransformUtility.RectangleContainsScreenPoint(towermenu, screenPoint))
+        {
+            //Tower menu is being clicked. Stop other actions
+            return;
+        }
+        
+
+
+        
         //Select tower
-        RaycastHit2D hit = Physics2D.Raycast(worldPoint, Vector2.zero, 1000000000000f,1 << towerLayerIndex);
+        RaycastHit2D hit = Physics2D.Raycast(worldPoint, Vector2.zero, Mathf.Infinity,1 << towerLayerIndex);
         if(hit.collider != null && hit.collider.tag != null)
         {
             //Debug.Log("Hit: " + hit.collider.gameObject.tag);
@@ -301,14 +322,15 @@ public class TowerManager : MonoBehaviour
                 SelectTowerObject(hit.collider.gameObject);
             }else
             {
+                
                 DeselectTowerObject();
             }
         }else
         {
-
             DeselectTowerObject();
         }
         
+
     }
 
     /** Select a tower on the map

@@ -164,6 +164,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speed: 0.95
   difficulty: 5
-  health: 75
+  health: 100
   rewardMin: 2
   rewardMax: 20

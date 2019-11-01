@@ -201,10 +201,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a3de426dadc74b94681f7720841ffd82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  towerName: Archery Tower
   radius: 5
-  shootingSpeed: 0.5
+  shootingSpeed: 0.7
   dmgType: 1
-  accuracy: 3
+  accuracy: 2
   initialPrice: 70
   towerLevelUps: 2
   projectile: {fileID: 4882813819560900002, guid: 205775ad804f15140afa0b46414a750c,
