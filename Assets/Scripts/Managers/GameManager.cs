@@ -31,6 +31,7 @@ public class GameManager : MonoBehaviour
 
     //Scene count
     private int TotalLevels = 0;
+    
     public int LevelCount
     {
         get { GetSceneCount(); return TotalLevels; }
@@ -44,6 +45,7 @@ public class GameManager : MonoBehaviour
     public int[] LevelStats { get { return levelStats; } }
 
     private int highestLevelAvailable = 0;
+    public int HighestLevelAvailable { get { return highestLevelAvailable; } }
 
 
     //Generate an instance if needed. Do not allow more than one
@@ -124,6 +126,10 @@ public class GameManager : MonoBehaviour
         {
             //you did a better score before
         }
+        if( level > highestLevelAvailable)
+        {
+            highestLevelAvailable = level;
+        }
         
         return;
     }
@@ -153,6 +159,13 @@ public class GameManager : MonoBehaviour
                     if( loadedLevelStats.Length > i)
                     {
                         levelStats[i] = loadedLevelStats[i];
+
+                        //is level passed. If so, make the next one available
+                        if( LevelStats[i] > 0)
+                        {
+                            //Level has at least 1 star
+                            highestLevelAvailable = i+1;
+                        }
                     }
                 }
             }
@@ -222,6 +235,15 @@ public class GameManager : MonoBehaviour
         }
     }
 
+
+    public void LoadLevel(int levelNo)
+    {
+        if(levelNo < TotalLevels)
+        {
+            string levelName = "Level " + (levelNo + 1).ToString();
+            SceneManager.LoadScene(levelName);
+        }
+    }
 
     private void GetSceneCount()
     {
