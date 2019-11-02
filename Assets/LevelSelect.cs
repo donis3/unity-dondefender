@@ -11,10 +11,13 @@ public class LevelSelect : MonoBehaviour
 
     //Required Game Objects
     private GameObject LevelsPanel;
+
+    private Vector2 currentScale;
     
 
     private void Start()
     {
+        currentScale = GameObject.Find("Canvas").GetComponent<RectTransform>().localScale;
         LevelsPanel = GameObject.Find("Levels");
         if(GameManager.instance.LevelCount > 0)
         {
@@ -23,6 +26,9 @@ public class LevelSelect : MonoBehaviour
                 SpawnLevelButton(i);
             }
         }
+        
+
+
     }
 
 
@@ -31,7 +37,7 @@ public class LevelSelect : MonoBehaviour
     {
         GameObject LevelButton = Instantiate(LevelBtn);
         LevelButton.transform.localPosition = new Vector2(0f, 0f);
-        LevelButton.transform.localScale = Vector2.one;
+        LevelButton.transform.localScale = currentScale;
         LevelButton.transform.SetParent(LevelsPanel.transform);
 
         //Get Components
