@@ -205,7 +205,7 @@ public class TowerManager : MonoBehaviour
         //Where to place the tower
         Vector2 worldPoint = new Vector2(0f, 0f);
 
-        if (Input.touchSupported)
+        if (Input.touchSupported && Input.touchCount > 0)
         {
             if (Input.touchCount == 1)
             {
@@ -230,6 +230,12 @@ public class TowerManager : MonoBehaviour
     //Visualize the tower at cursor
     void MouseFollow()
     {
+        //Disable mouse follow
+        mouseFollowActive = false;
+        spriteRenderer.sprite = null;
+        return;
+        
+        //original
         if (Input.touchSupported == false)
         {
             if (towerSprite != null)

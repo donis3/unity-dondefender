@@ -63,6 +63,7 @@ public class Enemy : MonoBehaviour
     private EnemyManager enemyManager;
     private Transform enemyExit; //Location of exit point
     private GameObject[] waypoints;
+    private bool lastWaypointTouched = false;
 
 
     private void Awake()
@@ -95,6 +96,15 @@ public class Enemy : MonoBehaviour
             Debug.LogError("There are 0 waypoints. Please create checkpoint tagged objects on the path");
         }
         checkpointCount = waypoints.Length;
+
+        Array.Sort(waypoints, CompareObNames);
+        //Order waypoints by name
+        int CompareObNames(GameObject x, GameObject y)
+        {
+            return x.name.CompareTo(y.name);
+        }
+
+
 
         //GET EXIT POINT
         enemyExit = GameObject.FindGameObjectWithTag(exitTag).transform;
@@ -145,13 +155,13 @@ public class Enemy : MonoBehaviour
 
         
 
-        if (target < checkpointCount)
+        if (target < checkpointCount && lastWaypointTouched == false)
         {
             //There are still checkpoints to visit
-            enemy.position = Vector2.MoveTowards(enemy.position, waypoints[target].transform.position, speed*Time.deltaTime);
+            enemy.localPosition = Vector2.MoveTowards(enemy.localPosition, waypoints[target].transform.localPosition, speed*Time.deltaTime);
 
             //Save the current heading
-            currentHeading = enemy.position - waypoints[target].transform.position;
+            currentHeading = enemy.localPosition - waypoints[target].transform.localPosition;
 
             //Call directional controller to decide which way enemy is going
             enemyDirectionController();
@@ -160,7 +170,8 @@ public class Enemy : MonoBehaviour
         else
         {
             //We have finished the array. GO to exit point
-            enemy.position = Vector2.MoveTowards(enemy.position, enemyExit.position, speed * Time.deltaTime);
+            enemy.localPosition = Vector2.MoveTowards(enemy.localPosition, enemyExit.localPosition, speed * Time.deltaTime);
+            lastWaypointTouched = true;
         }
         
 

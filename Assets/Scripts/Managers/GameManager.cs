@@ -2,7 +2,7 @@
 using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
-//using UnityEngine.UI;
+using UnityEngine.UI;
 
 /// <summary>
 /// Singleton game manager. Loaded at first scene. Can be loaded at other scenes too. Wont be initialized if thers already an instance
@@ -51,6 +51,7 @@ public class GameManager : MonoBehaviour
     //Generate an instance if needed. Do not allow more than one
     private void Awake()
     {
+        
         if( instance == null)
         {
             instance = this;
@@ -86,17 +87,23 @@ public class GameManager : MonoBehaviour
             Time.timeScale = gameSpeed;
         }
 
+        if( State == gameState.menu && LevelSelect.instance.levelsLoaded == false)
+        {
+            LevelSelect.instance.SpawnButtons();
+        }
+        
         
 
     }
 
     private void Start()
     {
+        
         GetSceneCount();
+        LoadPlayerProgress();
+        
 
         
-        LoadPlayerProgress();
-
     }
 
     //Save a level progress in levelStats. hint: level is normal not array index. Level 1 : 1
@@ -192,6 +199,9 @@ public class GameManager : MonoBehaviour
     public void QuitLevel()
     {
         SceneManager.LoadScene("Menu");
+
+        State = gameState.menu;
+        
     }
 
     public void RestartLevel()
@@ -245,7 +255,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void GetSceneCount()
+    public void GetSceneCount()
     {
         TotalLevels = SceneManager.sceneCountInBuildSettings;
         if( TotalLevels > 1)
